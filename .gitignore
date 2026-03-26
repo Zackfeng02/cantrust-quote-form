@@ -1,0 +1,20 @@
+# Claude Code internal files (credentials, history, sessions)
+.claude/
+
+# Superpowers brainstorm artifacts
+.superpowers/
+
+# Tax and financial documents
+tax receipts/
+
+# AMS sub-project (managed as its own repo)
+AMS_v1.1/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Lock files
+*.lock
+~$*
