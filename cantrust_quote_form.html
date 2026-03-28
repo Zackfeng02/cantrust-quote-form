@@ -695,6 +695,7 @@
 
   function handleSubmit() {
     collectStepData();
+    if (!validateStep()) return;
     submitForm();
   }
 
@@ -1217,9 +1218,10 @@
     return {
       access_key: WEB3FORMS_KEY,
       subject: 'CanTrust Insurance Quote Request — ' + flowLabel,
-      from_name: d['full_name'] || 'Unknown',
+      name: d['full_name'] || 'Unknown',
+      email: d['email'] || '',
       message: lines.join('\n'),
-      _honey: '',
+      botcheck: false,
     };
   }
 
