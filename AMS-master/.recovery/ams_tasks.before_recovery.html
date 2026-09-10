@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMS Â· å¾åä»»å¡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ams_bootstrap.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:        #0d1b2a;
+  --navy-mid:    #152336;
+  --navy-light:  #1e3450;
+  --navy-hover:  #243d5e;
+  --accent:      #e8a020;
+  --accent-dim:  #c4851a;
+  --red:         #e05252;
+  --green:       #3fc98b;
+  --blue:        #4a9edd;
+  --purple:      #9b59b6;
+  --text-1:      #f0f4f8;
+  --text-2:      #a8bcd0;
+  --text-3:      #607a93;
+  --border:      rgba(255,255,255,0.07);
+  --card-bg:     #ffffff;
+  --page-bg:     #f0f4f8;
+  --card-border: #e2e8f0;
+  --dark-text:   #1a2e42;
+  --mid-text:    #4a6478;
+}
+body { font-family: 'Outfit', sans-serif; background: var(--page-bg); color: var(--dark-text); min-height: 100vh; display: flex; overflow-x: hidden; }
+
+/* ââ Sidebar ââ */
+.sidebar { width: 240px; min-height: 100vh; background: var(--navy); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; border-right: 1px solid var(--border); }
+.sidebar-logo { padding: 28px 24px 24px; border-bottom: 1px solid var(--border); }
+.sidebar-logo .logo-mark { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--text-1); letter-spacing: -0.5px; }
+.sidebar-logo .logo-mark span { color: var(--accent); }
+.sidebar-logo .logo-sub { font-size: 11px; color: var(--text-3); margin-top: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
+.sidebar-nav { flex: 1; padding: 16px 12px; }
+.nav-section-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px 4px; margin-top: 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--text-2); font-size: 14px; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; text-decoration: none; }
+.nav-item:hover { background: var(--navy-hover); color: var(--text-1); }
+.nav-item.active { background: var(--navy-light); color: var(--text-1); font-weight: 500; }
+.nav-item.active .nav-icon { color: var(--accent); }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--navy-mid); }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--navy); flex-shrink: 0; }
+.user-name { font-size: 13px; color: var(--text-1); font-weight: 500; }
+.user-role { font-size: 11px; color: var(--text-3); }
+
+/* ââ Main ââ */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: var(--card-bg); border-bottom: 1px solid var(--card-border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+/* ââ Buttons ââ */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: 'Outfit', sans-serif; white-space: nowrap; }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy-light); }
+.btn-ghost { background: transparent; color: var(--mid-text); border: 1px solid var(--card-border); }
+.btn-ghost:hover { background: var(--page-bg); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: #fff0f0; color: var(--red); border: 1px solid #ffd5d5; }
+.btn-danger:hover { background: #ffe0e0; }
+
+/* ââ Content layout ââ */
+.content { padding: 28px 32px; flex: 1; }
+
+/* ââ Summary Cards ââ */
+.summary-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
+.summary-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.15s; }
+.summary-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
+.summary-card.active-card { border-color: transparent; box-shadow: 0 0 0 2px var(--navy); }
+.summary-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.dot-all       { background: var(--mid-text); }
+.dot-pending   { background: var(--accent); }
+.dot-contacted { background: var(--blue); }
+.dot-quoting   { background: var(--purple); }
+.dot-completed { background: var(--green); }
+.summary-body { flex: 1; min-width: 0; }
+.summary-label { font-size: 11px; color: var(--mid-text); text-transform: uppercase; letter-spacing: 0.4px; }
+.summary-count { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--dark-text); line-height: 1.1; }
+
+/* ââ Toolbar ââ */
+.tasks-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 320px; }
+.search-input { width: 100%; padding: 9px 12px 9px 36px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; font-family: 'Outfit', sans-serif; background: var(--card-bg); color: var(--dark-text); outline: none; transition: border-color 0.15s; }
+.search-input:focus { border-color: var(--accent); }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--mid-text); pointer-events: none; }
+.filter-select { padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; font-family: 'Outfit', sans-serif; background: var(--card-bg); color: var(--dark-text); outline: none; cursor: pointer; }
+.filter-select:focus { border-color: var(--accent); }
+
+/* ââ Kanban Board ââ */
+.kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start; }
+.kanban-col { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
+.kanban-col-header { padding: 14px 16px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; }
+.kanban-col-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--dark-text); }
+.kanban-dot { width: 8px; height: 8px; border-radius: 50%; }
+.kanban-count { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: var(--page-bg); color: var(--mid-text); border: 1px solid var(--card-border); }
+.kanban-cards { padding: 10px; min-height: 80px; }
+.kanban-empty { text-align: center; padding: 24px 12px; color: var(--mid-text); font-size: 13px; opacity: 0.6; }
+
+/* ââ Task Card ââ */
+.task-card { background: #fff; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; position: relative; }
+.task-card:last-child { margin-bottom: 0; }
+.task-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.07); transform: translateY(-1px); }
+.task-card.selected { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(13,27,42,0.12); }
+.task-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.task-card-title { font-size: 13px; font-weight: 500; color: var(--dark-text); line-height: 1.4; flex: 1; }
+.task-type-tag { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0; }
+.tag-renewal  { background: #fff8e8; color: #b06000; }
+.tag-followup { background: #e8f4ff; color: #1a6baa; }
+.tag-manual   { background: #f0f4f8; color: #607a93; }
+.tag-workflow { background: #ecfdf5; color: #065f46; }
+.tag-change  { background: #f0e8ff; color: #6a2aaa; }
+
+/* ââ Workflow status dots & badges ââ */
+.dot-pending-issue  { background: #f59e0b; }
+.dot-pending-sign   { background: #3b82f6; }
+.dot-pending-entry  { background: #8b5cf6; }
+.dot-annual-track   { background: #10b981; }
+.dot-app-install    { background: #06b6d4; }
+
+/* Workflow view tab */
+.view-tabs { display: flex; gap: 4px; background: #f0f4f8; border-radius: 10px; padding: 4px; margin-bottom: 16px; width: fit-content; }
+.view-tab { padding: 7px 18px; border-radius:8px; border:none; background:transparent; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; cursor:pointer; color:#607a93; transition:all .18s; }
+.view-tab.active { background:#fff; color:#0d1b2a; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.view-tab .tab-count { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#e2e8f0; color:#607a93; font-size:10px; font-weight:700; margin-left:5px; }
+.view-tab.active .tab-count { background:#e8a020; color:#0d1b2a; }
+
+/* Workflow step badge */
+.step-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+.step-issue  { background:#fef3c7; color:#b45309; }
+.step-sign   { background:#dbeafe; color:#1d4ed8; }
+.step-entry  { background:#ede9fe; color:#5b21b6; }
+.step-annual { background:#d1fae5; color:#065f46; }
+.step-app    { background:#cffafe; color:#0e7490; }
+
+/* Entry complete action */
+.action-btn.entry-done { background:#ede9fe; color:#5b21b6; border-color:#c4b5fd; }
+.action-btn.entry-done:hover { background:#5b21b6; color:#fff; }
+
+/* Premium update modal */
+.prem-modal { background:#fff; border-radius:16px; width:440px; max-width:94vw; box-shadow:0 24px 64px rgba(0,0,0,.25); transform:translateY(12px); transition:transform .2s; }
+.modal-overlay.open .prem-modal { transform:none; }
+.task-card-client { font-size: 12px; color: var(--mid-text); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.task-card-due { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; }
+.due-overdue { background: #fff0f0; color: var(--red); }
+.due-today   { background: #fff8e8; color: #b06000; }
+.due-soon    { background: #fff8e8; color: #b06000; }
+.due-normal  { background: #f0f4f8; color: var(--mid-text); }
+.due-none    { background: #f0f4f8; color: var(--mid-text); }
+.task-card-actions { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+.action-btn { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer; border: 1px solid var(--card-border); background: var(--page-bg); color: var(--mid-text); font-family: 'Outfit', sans-serif; transition: all 0.12s; white-space: nowrap; }
+.action-btn:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+.action-btn.done  { background: #edfaf4; color: #1a7a50; border-color: #b0e8cc; }
+.action-btn.done:hover { background: #1a7a50; color: #fff; }
+.action-btn.del   { background: #fff0f0; color: var(--red); border-color: #ffd5d5; }
+.action-btn.del:hover  { background: var(--red); color: #fff; }
+
+/* ââ List View (alternative) ââ */
+.list-view { display: none; }
+.list-view.visible { display: block; }
+.list-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border); }
+.list-table th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-text); padding: 11px 16px; background: #f8fafc; border-bottom: 1px solid var(--card-border); }
+.list-table td { padding: 13px 16px; font-size: 14px; border-bottom: 1px solid #f5f7fa; vertical-align: middle; }
+.list-table tr:last-child td { border-bottom: none; }
+.list-table tr:hover td { background: #fafcff; cursor: pointer; }
+.status-select { font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--page-bg); color: var(--mid-text); cursor: pointer; font-family: 'Outfit', sans-serif; outline: none; }
+.status-select:focus { border-color: var(--accent); }
+
+/* ââ Modal ââ */
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.6); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--card-bg); border-radius: 16px; width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; transform: translateY(12px); transition: transform 0.2s; box-shadow: 0 24px 64px rgba(0,0,0,0.2); }
+.modal-overlay.open .modal { transform: none; }
+.modal-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--card-bg); z-index: 1; }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--mid-text); padding: 4px; border-radius: 4px; }
+.modal-close:hover { background: var(--page-bg); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--card-border); display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ââ Form ââ */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--mid-text); }
+.form-label .required { color: var(--red); margin-left: 2px; }
+.form-input, .form-select, .form-textarea { padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px; font-family: 'Outfit', sans-serif; color: var(--dark-text); background: #fff; outline: none; transition: border-color 0.15s; width: 100%; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-hint { font-size: 11px; color: var(--mid-text); }
+.form-error { color: var(--red); font-size: 12px; }
+
+/* ââ Config ââ */
+#config-screen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.config-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 440px; max-width: 90vw; }
+.config-logo { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+.config-logo span { color: var(--accent); }
+.config-sub { font-size: 13px; color: var(--text-3); margin-bottom: 28px; }
+.config-field { margin-bottom: 16px; }
+.config-label { font-size: 12px; color: var(--text-2); margin-bottom: 6px; font-weight: 500; display: block; }
+.config-input { width: 100%; background: var(--navy); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text-1); font-size: 13px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.15s; }
+.config-input:focus { border-color: var(--accent); }
+.config-hint { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.config-btn { width: 100%; padding: 12px; background: var(--accent); color: var(--navy); border: none; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+.config-btn:hover { background: var(--accent-dim); }
+.config-error { color: #ff7070; font-size: 12px; margin-top: 10px; display: none; }
+
+/* ââ Misc ââ */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-cover { display: flex; align-items: center; justify-content: center; padding: 60px; gap: 10px; color: var(--mid-text); font-size: 14px; }
+.toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; background: var(--navy); color: var(--text-1); padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.2); transform: translateY(80px); opacity: 0; transition: all 0.25s; }
+.toast.show { transform: none; opacity: 1; }
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+
+/* ââ View toggle ââ */
+.view-toggle { display: flex; border: 1px solid var(--card-border); border-radius: 8px; overflow: hidden; }
+.view-btn { padding: 7px 12px; background: none; border: none; cursor: pointer; font-size: 16px; color: var(--mid-text); transition: all 0.12s; }
+.view-btn.active { background: var(--navy); color: #fff; }
+
+/* ââ Confirm dialog ââ */
+.confirm-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.5); z-index: 300; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+.confirm-overlay.open { opacity: 1; pointer-events: all; }
+.confirm-box { background: var(--card-bg); border-radius: 12px; padding: 28px; width: 360px; max-width: 90vw; box-shadow: 0 16px 48px rgba(0,0,0,0.2); transform: scale(0.96); transition: transform 0.15s; }
+.confirm-overlay.open .confirm-box { transform: scale(1); }
+.confirm-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.confirm-msg { font-size: 14px; color: var(--mid-text); margin-bottom: 20px; line-height: 1.5; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+@media (max-width: 1100px) { .kanban { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 900px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo .logo-sub, .nav-item .nav-label, .nav-section-label, .user-name, .user-role { display: none; }
+  .main { margin-left: 60px; }
+  .kanban { grid-template-columns: 1fr; }
+  .summary-row { grid-template-columns: repeat(3,1fr); }
+  .content { padding: 16px; }
+}
+.btn-snooze-sm {
+  border: none;
+  background: #f0f4f8;
+  color: var(--dark-text);
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-snooze-sm:hover { background: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<!-- Config -->
+<div id="config-screen">
+  <div class="config-card">
+    <div class="config-logo">AMS<span>Â·</span></div>
+    <div class="config-sub" data-i18n="config_sub">è¯·è¾å¥æ¨ç?Supabase è¿æ¥ä¿¡æ¯</div>
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_url_label">Project URL</label>
+      <input class="config-input" id="cfg-url" type="text" placeholder="https://xxxxxxxxxx.supabase.co">
+      <div class="config-hint" data-i18n="config_hint_url">Supabase > Project Settings > API</div>
+    </div>
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_key_label">Anon Public Key</label>
+      <input class="config-input" id="cfg-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+    </div>
+    <button class="config-btn" onclick="connectSupabase()" data-i18n="config_connect">è¿æ¥å¹¶è¿å¥ç³»ç»?/button>
+    <div class="config-error" id="cfg-error"></div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AMS<span>Â·</span></div>
+    <div class="logo-sub">Insurance Manager</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-i18n="nav_main">ä¸»èå?/div>
+    <a class="nav-item" href="ams_dashboard.html"><span class="nav-icon">â?/span><span class="nav-label" data-i18n="nav_dashboard">ä»ªè¡¨ç?/span></a>
+    <a class="nav-item" href="ams_clients.html"><span class="nav-icon">ð¤</span><span class="nav-label" data-i18n="nav_clients">å®¢æ·ç®¡ç</span></a>
+    <a class="nav-item" href="ams_policies.html"><span class="nav-icon">ð</span><span class="nav-label" data-i18n="nav_policies">ä¿åç®¡ç</span></a>
+    <a class="nav-item active" href="#"><span class="nav-icon">â?/span><span class="nav-label" data-i18n="nav_tasks">å¾åä»»å¡</span></a>
+    <div class="nav-section-label" style="margin-top:16px;" data-i18n="nav_business">ä¸å¡</div>
+    <a class="nav-item" href="ams_quotes.html"><span class="nav-icon">ð²</span><span class="nav-label" data-i18n="nav_quotes">æ°å®¢æ·æ¥ä»?/span></a>
+    <a class="nav-item" href="ams_import_quote.html"><span class="nav-icon">ð¥</span><span class="nav-label" data-i18n="nav_import">æ¥ä»·å¯¼å¥</span></a>
+    <a class="nav-item" href="ams_renewal.html"><span class="nav-icon">ð</span><span class="nav-label" data-i18n="nav_renewal">ç»­ä¿å¯¹æ¯</span></a>
+    <div class="nav-section-label" style="margin-top:16px;" data-i18n="nav_records">è®°å½</div>
+    <a class="nav-item" href="ams_changes.html"><span class="nav-icon">ð</span><span class="nav-label" data-i18n="nav_changes">åæ´è®°å½</span></a>
+    <a class="nav-item" href="ams_reports.html"><span class="nav-icon">ð</span><span class="nav-label" data-i18n="nav_reports">æ¥è¡¨</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar">æ?/div>
+      <div><div class="user-name" data-i18n="user_name">ç¬ç«ç»çºªäº?/div><div class="user-role">Administrator</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-title" data-i18n="page_tasks">å¾åä»»å¡</div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" id="run-renewal-btn" onclick="runRenewalScan()" data-i18n="tasks_scan_renewal">ð æ«æç»­ä¿æé</button>
+      <button class="btn btn-ghost" onclick="loadTasks()" data-i18n="btn_refresh">â?å·æ°</button>
+      <button class="btn btn-primary" onclick="openNewTaskModal()" data-i18n="btn_new_task">ï¼?æ°å¢ä»»å¡</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- Summary cards -->
+    <div class="summary-row" id="summary-row">
+      <div class="summary-card active-card" onclick="setSummaryFilter('all',this)">
+        <div class="summary-dot dot-all"></div>
+        <div class="summary-body"><div class="summary-label" data-i18n="tasks_all_active">å¨é¨æ´»è·</div><div class="summary-count" id="cnt-all">â?/div></div>
+      </div>
+      <div class="summary-card" onclick="setSummaryFilter('pending',this)">
+        <div class="summary-dot dot-pending"></div>
+        <div class="summary-body"><div class="summary-label" data-i18n="task_pending">å¾å¤ç?/div><div class="summary-count" id="cnt-pending">â?/div></div>
+      </div>
+      <div class="summary-card" onclick="setSummaryFilter('contacted',this)">
+        <div class="summary-dot dot-contacted"></div>
+        <div class="summary-body"><div class="summary-label" data-i18n="task_contacted">å·²èç³?/div><div class="summary-count" id="cnt-contacted">â?/div></div>
+      </div>
+      <div class="summary-card" onclick="setSummaryFilter('quoting',this)">
+        <div class="summary-dot dot-quoting"></div>
+        <div class="summary-body"><div class="summary-label" data-i18n="task_quoting">æ¥ä»·ä¸?/div><div class="summary-count" id="cnt-quoting">â?/div></div>
+      </div>
+      <div class="summary-card" onclick="setSummaryFilter('workflow',this)" style="border-left:3px solid #10b981">
+        <div class="summary-dot" style="background:#10b981"></div>
+        <div class="summary-body"><div class="summary-label" data-i18n="tasks_renewal_workflow">ç»­ä¿æµç¨</div><div class="summary-count" id="cnt-workflow">â?/div></div>
+      </div>
+      <div class="summary-card" onclick="setSummaryFilter('completed',this)">
+        <div class="summary-dot dot-completed"></div>
+        <div class="summary-body"><div class="summary-label" data-i18n="task_completed">å·²å®æ?/div><div class="summary-count" id="cnt-completed">â?/div></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="tasks-toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">ð</span>
+        <input class="search-input" id="search-input" type="text"
+               placeholder="æç´¢ä»»å¡æ é¢ãå®¢æ·â? data-i18n="tasks_search_placeholder" data-i18n-target="placeholder" oninput="applyFilters()">
+      </div>
+      <select class="filter-select" id="type-filter" onchange="applyFilters()">
+        <option value="all" data-i18n="tasks_filter_all_types">å¨é¨ç±»å</option>
+        <option value="renewal_workflow" data-i18n="tasks_filter_renewal_workflow">ç»­ä¿æµç¨ä»»å¡</option>
+        <option value="renewal_reminder" data-i18n="tasks_filter_renewal_reminder">ç»­ä¿æé</option>
+        <option value="follow_up" data-i18n="tasks_filter_follow_up">è·è¿ä»»å¡</option>
+        <option value="manual" data-i18n="tasks_filter_manual">æå¨ä»»å¡</option>
+      </select>
+      <select class="filter-select" id="due-filter" onchange="applyFilters()">
+        <option value="all" data-i18n="tasks_filter_all_dates">å¨é¨æ¥æ</option>
+        <option value="overdue" data-i18n="tasks_filter_overdue">å·²é¾æ</option>
+        <option value="today" data-i18n="tasks_filter_today">ä»å¤©å°æ</option>
+        <option value="week" data-i18n="tasks_filter_week">7å¤©å</option>
+        <option value="month" data-i18n="tasks_filter_month">30å¤©å</option>
+      </select>
+      <div style="flex:1"></div>
+      <div class="view-toggle">
+        <button class="view-btn active" id="btn-kanban" title="çæ¿è§å¾" onclick="switchView('kanban')">â?/button>
+        <button class="view-btn" id="btn-list" title="åè¡¨è§å¾" onclick="switchView('list')">â?/button>
+      </div>
+    </div>
+
+    <!-- View mode tabs: Regular vs Workflow -->
+    <div class="view-tabs" id="view-mode-tabs">
+      <button class="view-tab active" id="vtab-regular" onclick="switchViewMode('regular')">
+        <span data-i18n="tasks_tab_regular">ð å¸¸è§ä»»å¡</span> <span class="tab-count" id="vtab-regular-cnt">0</span>
+      </button>
+      <button class="view-tab" id="vtab-workflow" onclick="switchViewMode('workflow')">
+        <span data-i18n="tasks_tab_workflow">ð ç»­ä¿æµç¨</span> <span class="tab-count" id="vtab-workflow-cnt">0</span>
+      </button>
+    </div>
+
+    <!-- Kanban -->
+    <div id="kanban-view">
+      <div class="kanban" id="kanban-board">
+        <div class="loading-cover" style="grid-column:1/-1"><span class="spinner"></span> å è½½ä¸­â?/div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="list-view" id="list-view">
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th data-i18n="th_tasks">ä»»å¡</th>
+            <th data-i18n="th_type">ç±»å</th>
+            <th data-i18n="th_client">å®¢æ·</th>
+            <th data-i18n="th_due_date">æªæ­¢æ¥æ</th>
+            <th data-i18n="followup_date_label">è·è¿æ¥æ</th>
+            <th data-i18n="th_status">ç¶æ?/th>
+            <th data-i18n="th_action">æä½</th>
+          </tr>
+        </thead>
+        <tbody id="list-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--mid-text)"><span class="spinner"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- New/Edit Task Modal -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="task-modal-title" data-i18n="tasks_modal_new">æ°å¢ä»»å¡</div>
+      <button class="modal-close" onclick="safeCloseTaskModal()">â?/button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label"><span data-i18n="label_task_title">ä»»å¡æ é¢</span><span class="required">*</span></label>
+          <input class="form-input" id="f-title" type="text" placeholder="ä¾ï¼è·è¿å¼ ä¼è½¦é©ç»­ä¿æå" data-i18n="tasks_title_placeholder" data-i18n-target="placeholder">
+          <span class="form-error" id="f-title-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="tasks_task_type_label">ä»»å¡ç±»å</label>
+          <select class="form-select" id="f-task-type">
+            <option value="manual" data-i18n="tasks_type_manual">æå¨ä»»å¡</option>
+            <option value="follow_up" data-i18n="tasks_type_follow_up">è·è¿ä»»å¡</option>
+            <option value="renewal_reminder" data-i18n="tasks_type_renewal_reminder">ç»­ä¿æé</option>
+            <option value="renewal_workflow" data-i18n="tasks_type_renewal_workflow">ç»­ä¿æµç¨</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_status">ç¶æ?/label>
+          <select class="form-select" id="f-task-status">
+            <optgroup label="ââ å¸¸è§ä»»å¡ ââ">
+              <option value="pending" data-i18n="task_pending">å¾å¤ç?/option>
+              <option value="contacted" data-i18n="task_contacted">å·²èç³?/option>
+              <option value="quoting" data-i18n="task_quoting">æ¥ä»·ä¸?/option>
+              <option value="completed" data-i18n="task_completed">å·²å®æ?/option>
+              <option value="abandoned" data-i18n="task_abandoned">å·²æ¾å¼?/option>
+            </optgroup>
+            <optgroup label="ââ ç»­ä¿æµç¨ ââ">
+              <option value="pending_issue" data-i18n="task_pending_issue">å¾åºå?/option>
+              <option value="pending_sign" data-i18n="task_pending_sign">å¾ç­¾å­?/option>
+              <option value="pending_entry" data-i18n="task_pending_entry">å¾å½å?/option>
+              <option value="annual_tracking" data-i18n="tasks_annual_tracking">å¹´ä»è¿åº¦</option>
+              <option value="app_install" data-i18n="tasks_app_install">APPå®è£è¿åº¦</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="tasks_linked_client">å³èå®¢æ·ï¼å®¢æ·ç¼ç ï¼</label>
+          <input class="form-input" id="f-task-code" type="text" placeholder="ABCD01"
+                 maxlength="6" style="text-transform:uppercase" oninput="lookupTaskClient()">
+          <div id="task-client-result" style="font-size:12px;min-height:16px;margin-top:2px"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_due_date">æªæ­¢æ¥æ</label>
+          <input class="form-input" id="f-due-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="followup_date_label">ä¸æ¬¡è·è¿æ¥æ</label>
+          <input class="form-input" id="f-follow-up-date" type="date">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="tasks_description_label">è¯¦ç»è¯´æ</label>
+          <textarea class="form-textarea" id="f-description" placeholder="ä»»ä½è¡¥åä¿¡æ¯â? data-i18n="tasks_desc_placeholder" data-i18n-target="placeholder"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseTaskModal()" data-i18n="btn_cancel">åæ¶</button>
+      <button class="btn btn-primary" id="task-save-btn" onclick="saveTask()" data-i18n="tasks_save_task">ä¿å­ä»»å¡</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title" data-i18n="tasks_confirm_action">ç¡®è®¤æä½</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="safeCloseConfirm()" data-i18n="btn_cancel">åæ¶</button>
+      <button class="btn btn-danger" id="confirm-ok-btn" data-i18n="btn_confirm">ç¡®è®¤</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Premium Update Modal (triggers when pending_entry â?completed) -->
+<div class="modal-overlay" id="prem-modal-overlay">
+  <div class="prem-modal">
+    <div class="modal-header" style="padding:20px 24px 0">
+      <div class="modal-title" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700" data-i18n="tasks_prem_modal_title">ð» å½åå®æ â?æ´æ°ä¿åä¿è´¹</div>
+      <button class="modal-close" onclick="safeClosePremModal()">â?/button>
+    </div>
+    <div style="padding:20px 24px">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:13px;color:#166534" data-i18n="tasks_prem_success_hint">
+        â?å½åå®æï¼è¯·å°ææ°ä¿è´¹å½å¥ç³»ç»ï¼ä¿åè®°å½å°åæ­¥æ´æ°ã?      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px" id="prem-modal-info">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="th_client">å®¢æ·</div>
+          <div style="font-size:14px;font-weight:600" id="pm-client">â?/div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="tasks_new_insurer">æ°ä¿é©å¬å?/div>
+          <div style="font-size:14px;font-weight:600;color:#e8a020" id="pm-insurer">â?/div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="tasks_payment_method">ä»æ¬¾æ¹å¼</div>
+          <div style="font-size:14px;font-weight:600" id="pm-paytype">â?/div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="tasks_confirm_annual">ç¡®è®¤å¹´ä¿è´?/div>
+          <div style="font-size:13px;font-weight:600;color:#5b21b6" id="pm-expected">â?/div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px" id="pm-policy-number-wrap" style="display:none">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px" data-i18n="tasks_new_policy_num">æ°ä¿åå· (Policy Number) <span style="color:#ef4444">*</span></label>
+        <input id="pm-policy-number" type="text"
+          style="width:100%;border:2px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;outline:none;color:#1e293b"
+          placeholder="è¾å¥æ°ä¿é©å¬å¸çä¿åå? data-i18n="tasks_new_policy_num_ph" data-i18n-target="placeholder">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px" data-i18n="tasks_actual_annual">å®éå½å¥å¹´ä¿è´?(Annual Premium) <span style="color:#ef4444">*</span></label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#94a3b8">$</span>
+          <input id="pm-annual-input" type="number" min="0" step="0.01"
+            style="flex:1;border:2px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-family:'Syne',sans-serif;font-size:20px;font-weight:700;outline:none;color:#1e293b"
+            oninput="onPmAnnualChange()" placeholder="0.00">
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px" id="pm-monthly-display">æä»ï¼â?/div>
+      </div>
+      <div style="margin-bottom:6px">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px" data-i18n="tasks_pay_cycle_confirm">ä»æ¬¾å¨æç¡®è®¤</label>
+        <div style="display:flex;gap:10px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer" id="pm-radio-annual">
+            <input type="radio" name="pm-pay" value="annual" checked onclick="pmSelectPay('annual')">
+            <div><div style="font-size:13px;font-weight:600" data-i18n="tasks_pay_annual">å¹´ä» Annual</div><div style="font-size:11px;color:#94a3b8" id="pm-annual-lbl" data-i18n="tasks_pay_lump_sum">ä¸æ¬¡æ§ç¼´æ¸?/div></div>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer" id="pm-radio-monthly">
+            <input type="radio" name="pm-pay" value="monthly" onclick="pmSelectPay('monthly')">
+            <div><div style="font-size:13px;font-weight:600" data-i18n="tasks_pay_monthly">æä» Monthly</div><div style="font-size:11px;color:#94a3b8" id="pm-monthly-lbl">çº?$â?/ æ?/div></div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 24px 20px;display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="completePremModalSkip()" data-i18n="tasks_skip_complete">è·³è¿ï¼ä»å®æä»»å¡ï¼?/button>
+      <button class="btn btn-primary" onclick="completePremModalSave()" data-i18n="tasks_entry_complete">â?å½å¥å¹¶å®æ?/button>
+    </div>
+  </div>
+</div>
+
+<!-- Binder Policy Confirmation Modal (triggers when pending_entry on BINDER- policy) -->
+<div class="modal-overlay" id="binder-modal-overlay">
+  <div class="prem-modal">
+    <div class="modal-header" style="padding:20px 24px 0">
+      <div class="modal-title" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700" data-i18n="tasks_binder_title">ð Binder ä¿åç¡®è®¤</div>
+      <button class="modal-close" onclick="safeCloseBinderModal()">â?/button>
+    </div>
+    <div style="padding:20px 24px">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:13px;color:#166534" data-i18n="tasks_binder_success_hint">
+        â?Binder ä¿åå½åå®æï¼è¯·è¾å¥ä¿é©å¬å¸ç¡®è®¤çæ­£å¼ä¿åå·ã?      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="th_client">å®¢æ·</div>
+          <div style="font-size:14px;font-weight:600" id="bm-client">â?/div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="th_insurer">ä¿é©å¬å¸</div>
+          <div style="font-size:14px;font-weight:600;color:#e8a020" id="bm-insurer">â?/div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="tasks_temp_policy_num">ä¸´æ¶ä¿åå?/div>
+          <div style="font-size:13px;font-weight:600;color:#8b5cf6;font-family:'JetBrains Mono',monospace" id="bm-binder-num">â?/div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px" data-i18n="tasks_current_premium">å½åä¿è´¹</div>
+          <div style="font-size:13px;font-weight:600" id="bm-current-prem">â?/div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px" data-i18n="tasks_official_policy_num">æ­£å¼ä¿åå?(Official Policy Number) <span style="color:#ef4444">*</span></label>
+        <input id="bm-policy-number" type="text"
+          style="width:100%;border:2px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;outline:none;color:#1e293b"
+          placeholder="è¾å¥ä¿é©å¬å¸ç¡®è®¤çæ­£å¼ä¿åå·" data-i18n="tasks_official_policy_num_ph" data-i18n-target="placeholder">
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px" data-i18n="tasks_confirm_annual_label">ç¡®è®¤å¹´ä¿è´?(Annual Premium) <span style="color:#ef4444">*</span></label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#94a3b8">$</span>
+          <input id="bm-annual-input" type="number" min="0" step="0.01"
+            style="flex:1;border:2px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-family:'Syne',sans-serif;font-size:20px;font-weight:700;outline:none;color:#1e293b"
+            oninput="onBmAnnualChange()" placeholder="0.00">
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px" id="bm-monthly-display">æä»ï¼â?/div>
+      </div>
+
+      <div style="margin-bottom:6px">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px" data-i18n="tasks_pay_cycle_confirm">ä»æ¬¾å¨æç¡®è®¤</label>
+        <div style="display:flex;gap:10px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer" id="bm-radio-annual">
+            <input type="radio" name="bm-pay" value="annual" checked onclick="bmSelectPay('annual')">
+            <div><div style="font-size:13px;font-weight:600" data-i18n="tasks_pay_annual">å¹´ä» Annual</div><div style="font-size:11px;color:#94a3b8" id="bm-annual-lbl" data-i18n="tasks_pay_lump_sum">ä¸æ¬¡æ§ç¼´æ¸?/div></div>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer" id="bm-radio-monthly">
+            <input type="radio" name="bm-pay" value="monthly" onclick="bmSelectPay('monthly')">
+            <div><div style="font-size:13px;font-weight:600" data-i18n="tasks_pay_monthly">æä» Monthly</div><div style="font-size:11px;color:#94a3b8" id="bm-monthly-lbl">çº?$â?/ æ?/div></div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 24px 20px;display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="safeCloseBinderModal()" data-i18n="btn_cancel">åæ¶</button>
+      <button class="btn btn-primary" id="bm-submit-btn" onclick="completeBinderSave()" data-i18n="tasks_confirm_complete">â?ç¡®è®¤å¹¶å®æ?/button>
+    </div>
+  </div>
+</div>
+
+<script>
+// âââââââââââââââââââââââââââââââââââââââââ
+// State
+// âââââââââââââââââââââââââââââââââââââââââ
+let db = null;
+let allTasks = [];
+let filtered = [];
+let currentView        = 'kanban';
+let summaryFilter      = 'all';
+let editingTaskId      = null;
+let confirmCallback    = null;
+let lookupTimer        = null;
+let binderModalTaskId  = null;
+let binderModalPolicy  = null;
+let bmPayType          = 'annual';
+
+const STATUS_LABEL = {
+  pending:'å¾å¤ç?, contacted:'å·²èç³?, quoting:'æ¥ä»·ä¸?, completed:'å·²å®æ?, abandoned:'å·²æ¾å¼?,
+  pending_issue:'å¾åºå?, pending_sign:'å¾ç­¾å­?, pending_entry:'å¾å½å?,
+  annual_tracking:'å¹´ä»è¿åº¦', app_install:'APPå®è£'
+};
+const TYPE_LABEL = { renewal_reminder:'ç»­ä¿', follow_up:'è·è¿', manual:'æå¨', renewal_workflow:'ç»­ä¿æµç¨', change_workflow:'åæ´æµç¨' };
+const TYPE_CLASS = { renewal_reminder:'tag-renewal', follow_up:'tag-followup', manual:'tag-manual', renewal_workflow:'tag-workflow', change_workflow:'tag-change' };
+const DOT_COLOR  = { pending:'var(--accent)', contacted:'var(--blue)', quoting:'var(--purple)', completed:'var(--green)', abandoned:'var(--mid-text)',
+  pending_issue:'#f59e0b', pending_sign:'#3b82f6', pending_entry:'#8b5cf6', annual_tracking:'#10b981', app_install:'#06b6d4' };
+
+const COLUMNS = [
+  { key:'pending',   label:'å¾å¤ç?,  dot:'dot-pending'   },
+  { key:'contacted', label:'å·²èç³?,  dot:'dot-contacted' },
+  { key:'quoting',   label:'æ¥ä»·ä¸?,  dot:'dot-quoting'   },
+  { key:'completed', label:'å·²å®æ?,  dot:'dot-completed' },
+];
+const WORKFLOW_COLUMNS = [
+  { key:'pending',        label:'ð« å¾å¤ç?,   dot:'dot-pending',        color:'#ef4444' },
+  { key:'pending_issue',  label:'ð å¾åºå?,   dot:'dot-pending-issue',  color:'#f59e0b' },
+  { key:'pending_sign',   label:'âï¸ å¾ç­¾å­?,   dot:'dot-pending-sign',   color:'#3b82f6' },
+  { key:'pending_entry',  label:'ð» å¾å½å?,   dot:'dot-pending-entry',  color:'#8b5cf6' },
+  { key:'annual_tracking',label:'ð° å¹´ä»è¿åº¦', dot:'dot-annual-track',   color:'#10b981' },
+  { key:'app_install',    label:'ð± APPå®è£',  dot:'dot-app-install',    color:'#06b6d4' },
+];
+const WORKFLOW_STATUSES = new Set(['pending_issue','pending_sign','pending_entry','annual_tracking','app_install']);
+
+// View mode: 'regular' or 'workflow'
+let viewMode = 'regular';
+
+// Premium modal state
+let premModalTaskId  = null;
+let premModalPolicyId= null;
+let pmPayType        = 'annual';
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Connect
+// âââââââââââââââââââââââââââââââââââââââââ
+async function connectSupabase() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  const errEl = document.getElementById('cfg-error');
+  errEl.style.display = 'none';
+  if (!url || !key) { errEl.textContent = 'è¯·å¡«åéç½®ä¿¡æ?; errEl.style.display = 'block'; return; }
+  try {
+    db = window.supabase.createClient(url, key);
+    const { error } = await db.from('tasks').select('id').limit(1);
+    if (error) throw error;
+    window.AMSBootstrap.storeCredentials(url, key);
+    document.getElementById('config-screen').style.display = 'none';
+    loadTasks();
+  } catch(e) {
+    errEl.textContent = 'è¿æ¥å¤±è´¥ï¼? + (e.message || 'è¯·æ£æ¥éç½?);
+    errEl.style.display = 'block';
+  }
+}
+(async function autoConnect() {
+  const creds = await window.AMSBootstrap.getCredentials();
+  if (creds?.url && creds?.key) {
+    document.getElementById('cfg-url').value = creds.url;
+    document.getElementById('cfg-key').value = creds.key;
+    db = window.supabase.createClient(creds.url, creds.key);
+    window.AMSBootstrap.storeCredentials(creds.url, creds.key);
+    document.getElementById('config-screen').style.display = 'none';
+    loadTasks();
+  }
+})();
+
+async function loadTasks() {
+  showLoading();
+  try {
+    const { data, error } = await db
+      .from('tasks')
+      .select('*, clients(full_name)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    allTasks = data || [];
+    updateSummaryCounts();
+    applyFilters();
+    // Auto-open new task modal with pre-filled customer_code from URL (e.g. from client detail page)
+    const _params = new URLSearchParams(location.search);
+    const _preCode = _params.get('customer_code');
+    if (_preCode) {
+      _params.delete('customer_code');
+      history.replaceState(null, '', location.pathname + (_params.toString() ? '?' + _params.toString() : ''));
+      openNewTaskModal();
+      document.getElementById('f-task-code').value = _preCode.toUpperCase();
+      lookupTaskClient();
+    }
+  } catch(e) {
+    document.getElementById('kanban-board').innerHTML =
+      `<div class="loading-cover" style="grid-column:1/-1;color:var(--red)">å è½½å¤±è´¥ï¼?{esc(e.message)}</div>`;
+  }
+}
+
+function showLoading() {
+  document.getElementById('kanban-board').innerHTML =
+    `<div class="loading-cover" style="grid-column:1/-1"><span class="spinner"></span> å è½½ä¸­â?/div>`;
+  document.getElementById('list-tbody').innerHTML =
+    `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--mid-text)"><span class="spinner"></span></td></tr>`;
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Summary counts
+// âââââââââââââââââââââââââââââââââââââââââ
+function updateSummaryCounts() {
+  const active    = allTasks.filter(t => !['completed','abandoned'].includes(t.status));
+  const wfActive  = active.filter(t => WORKFLOW_STATUSES.has(t.status));
+  const regActive = active.filter(t => !WORKFLOW_STATUSES.has(t.status));
+  document.getElementById('cnt-all').textContent       = regActive.length;
+  document.getElementById('cnt-pending').textContent   = active.filter(t => t.status === 'pending').length;
+  document.getElementById('cnt-contacted').textContent = active.filter(t => t.status === 'contacted').length;
+  document.getElementById('cnt-quoting').textContent   = active.filter(t => t.status === 'quoting').length;
+  document.getElementById('cnt-workflow').textContent  = wfActive.length;
+  document.getElementById('cnt-completed').textContent = allTasks.filter(t => t.status === 'completed').length;
+  // Update view tabs
+  document.getElementById('vtab-regular-cnt').textContent  = regActive.length;
+  document.getElementById('vtab-workflow-cnt').textContent = wfActive.length;
+}
+
+function setSummaryFilter(status, card) {
+  summaryFilter = status;
+  document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('active-card'));
+  card.classList.add('active-card');
+  applyFilters();
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Filters
+// âââââââââââââââââââââââââââââââââââââââââ
+function applyFilters() {
+  const q         = document.getElementById('search-input').value.toLowerCase();
+  const typeF     = document.getElementById('type-filter').value;
+  const dueF      = document.getElementById('due-filter').value;
+  const today     = new Date(); today.setHours(0,0,0,0);
+  const todayStr  = today.toISOString().split('T')[0];
+
+  filtered = allTasks.filter(t => {
+    // view mode filter: regular view hides workflow tasks and vice versa
+    const isWF = WORKFLOW_STATUSES.has(t.status) || t.task_type === 'renewal_workflow' || t.task_type === 'change_workflow';
+    if (viewMode === 'regular' && isWF) return false;
+    if (viewMode === 'workflow' && !isWF) return false;
+
+    // summary card filter
+    if (summaryFilter === 'all' || summaryFilter === 'workflow') {
+      if (['completed','abandoned'].includes(t.status)) return false;
+    } else {
+      if (t.status !== summaryFilter) return false;
+    }
+    // type filter
+    if (typeF !== 'all' && t.task_type !== typeF) return false;
+    // due date filter
+    if (dueF !== 'all') {
+      const d = t.due_date ? new Date(t.due_date + 'T00:00:00') : null;
+      if (!d) return false;
+      if (dueF === 'overdue' && d >= today) return false;
+      if (dueF === 'today'   && t.due_date !== todayStr) return false;
+      if (dueF === 'week'  && (d < today || d > new Date(today.getTime() + 7*86400000)))  return false;
+      if (dueF === 'month' && (d < today || d > new Date(today.getTime() + 30*86400000))) return false;
+    }
+    // search
+    if (q) {
+      const hay = [t.title, t.clients?.full_name, t.clients?.full_name, t.customer_code, t.description].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if (currentView === 'kanban') renderKanban();
+  else renderList();
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Kanban
+// âââââââââââââââââââââââââââââââââââââââââ
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+  const colDefs = viewMode === 'workflow'
+    ? (summaryFilter === 'all' || summaryFilter === 'workflow' ? WORKFLOW_COLUMNS : WORKFLOW_COLUMNS.filter(c => c.key === summaryFilter))
+    : (summaryFilter === 'all' ? COLUMNS : COLUMNS.filter(c => c.key === summaryFilter));
+
+  board.innerHTML = colDefs.map(col => {
+    const cards = filtered.filter(t => t.status === col.key);
+    const accentStyle = col.color ? `border-top:3px solid ${col.color}` : '';
+    return `
+      <div class="kanban-col" style="${accentStyle}">
+        <div class="kanban-col-header">
+          <div class="kanban-col-title">
+            <span class="kanban-dot ${col.dot}" style="${col.color?'background:'+col.color:''}"></span>${col.label}
+          </div>
+          <span class="kanban-count">${cards.length}</span>
+        </div>
+        <div class="kanban-cards">
+          ${cards.length === 0
+            ? `<div class="kanban-empty">ææ ä»»å¡</div>`
+            : cards.map(t => viewMode === 'workflow' ? renderWorkflowCard(t) : renderTaskCard(t)).join('')
+          }
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ââ Workflow Card Renderer ââ
+function renderWorkflowCard(t) {
+  const clientName = t.clients?.full_name || t.customer_code || '';
+  const dueHtml    = getDueHtml(t.due_date);
+  const typeLabel  = t.policy_type === 'auto' ? 'ð è½¦é©' : t.policy_type === 'home' ? 'ð  å®¶è´¢é? : '';
+  const payLabel   = t.payment_type === 'annual' ? 'å¹´ä»' : t.payment_type === 'monthly' ? 'æä»' : '';
+  const premLabel  = t.new_premium ? `$${Number(t.new_premium).toLocaleString('en-CA',{minimumFractionDigits:0})}` : '';
+
+  // Next status in workflow
+  const workflowNext = {
+    pending:         'completed',  // cancel tasks: pending â?completed
+    pending_issue:   'pending_sign',
+    pending_sign:    'pending_entry',
+    pending_entry:   null,  // special: triggers premium modal
+    annual_tracking: 'completed',
+    app_install:     'completed',
+  };
+  const workflowNextLabel = {
+    pending:         'â?å®æ',
+    pending_issue:   'â?å¾ç­¾å­?,
+    pending_sign:    'â?å¾å½å?,
+    annual_tracking: 'â?å®æ',
+    app_install:     'â?å®æ',
+  };
+
+  const nextSt = workflowNext[t.status];
+  const isEntryStep = t.status === 'pending_entry';
+
+  const stepClass = {
+    pending_issue:'step-issue', pending_sign:'step-sign', pending_entry:'step-entry',
+    annual_tracking:'step-annual', app_install:'step-app'
+  };
+
+  return `
+    <div class="task-card" onclick="openEditTaskModal('${t.id}')">
+      <div class="task-card-top">
+        <div class="task-card-title">${esc(t.title)}</div>
+        <span class="task-type-tag ${t.task_type === 'change_workflow' ? 'tag-change' : 'tag-workflow'}">${t.task_type === 'change_workflow' ? 'åæ´' : 'ç»­ä¿'}</span>
+      </div>
+      ${clientName ? `<div class="task-card-client">ð¤ ${esc(clientName)}</div>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        ${typeLabel ? `<span style="font-size:10px;color:#64748b">${typeLabel}</span>` : ''}
+        ${t.new_insurer ? `<span style="font-size:10px;font-weight:600;color:#e8a020">${esc(t.new_insurer)}</span>` : ''}
+        ${premLabel ? `<span style="font-size:10px;font-weight:700;color:#1e293b;font-family:JetBrains Mono,monospace">${premLabel} ${payLabel}</span>` : ''}
+      </div>
+      ${dueHtml}
+      ${getFollowUpHtml(t)}
+      <div class="task-card-actions" onclick="event.stopPropagation()">
+        ${!isEntryStep && nextSt ? `<button class="action-btn" onclick="quickWorkflowNext('${t.id}','${nextSt}')">${workflowNextLabel[t.status]}</button>` : ''}
+        ${isEntryStep && t.task_type === 'change_workflow' ? `<button class="action-btn entry-done" onclick="completeChangeEntry('${t.id}')" title="å½åå®æ + æ´æ°ä¿å">ð» å½åå®æ</button>` : ''}
+        ${isEntryStep && t.task_type !== 'change_workflow' ? `<button class="action-btn entry-done" onclick="openPremModal('${t.id}')" title="å½åå®æ + æ´æ°ä¿è´¹">ð» å½åå®æ</button>` : ''}
+        ${t.follow_up_date ? `<button class="btn-snooze-sm" onclick="event.stopPropagation();snoozeAndRefresh('${t.id}')">â?å·²è·è¿?/button>` : ''}
+        <button class="action-btn del"  onclick="confirmDelete('${t.id}')">â?/button>
+      </div>
+    </div>`;
+}
+
+function renderTaskCard(t) {
+  const clientName = t.clients?.full_name || t.customer_code || '';
+  const dueHtml    = getDueHtml(t.due_date);
+  const nextStatus = { pending:'contacted', contacted:'quoting', quoting:'completed' };
+  const nextLabel  = { pending:'â?å·²èç³?, contacted:'â?æ¥ä»·ä¸?, quoting:'â?å®æ' };
+
+  return `
+    <div class="task-card" onclick="openEditTaskModal('${t.id}')">
+      <div class="task-card-top">
+        <div class="task-card-title">${esc(t.title)}</div>
+        <span class="task-type-tag ${TYPE_CLASS[t.task_type]}">${TYPE_LABEL[t.task_type]}</span>
+      </div>
+      ${clientName ? `<div class="task-card-client">ð¤ ${esc(clientName)}</div>` : ''}
+      ${dueHtml}
+      ${getFollowUpHtml(t)}
+      <div class="task-card-actions" onclick="event.stopPropagation()">
+        ${nextStatus[t.status] ? `<button class="action-btn" onclick="quickStatus('${t.id}','${nextStatus[t.status]}')">${nextLabel[t.status]}</button>` : ''}
+        <button class="action-btn done" onclick="quickStatus('${t.id}','completed')">â?å®æ</button>
+        ${t.follow_up_date ? `<button class="btn-snooze-sm" onclick="event.stopPropagation();snoozeAndRefresh('${t.id}')">â?å·²è·è¿?/button>` : ''}
+        <button class="action-btn del"  onclick="confirmDelete('${t.id}')">â?/button>
+      </div>
+    </div>`;
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// List View
+// âââââââââââââââââââââââââââââââââââââââââ
+function renderList() {
+  const tbody = document.getElementById('list-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--mid-text)">ææ ä»»å¡</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(t => {
+    const clientName = t.clients?.full_name || t.customer_code || 'â?;
+    const dueText    = t.due_date || 'â?;
+    return `
+      <tr onclick="openEditTaskModal('${t.id}')">
+        <td>
+          <div style="font-weight:500;font-size:14px">${esc(t.title)}</div>
+          ${t.task_type==='renewal_workflow' && t.new_insurer ? `<div style="font-size:11px;color:#e8a020;margin-top:2px">â?${esc(t.new_insurer)} ${t.new_premium?'$'+Number(t.new_premium).toLocaleString('en-CA',{minimumFractionDigits:0})+'/å¹?:''} ${t.payment_type==='annual'?'(å¹´ä»)':t.payment_type==='monthly'?'(æä»)':''}</div>` : t.description ? `<div style="font-size:12px;color:var(--mid-text);margin-top:2px">${esc(t.description.substring(0,60))}${t.description.length>60?'â?:''}</div>` : ''}
+        </td>
+        <td><span class="task-type-tag ${TYPE_CLASS[t.task_type]}">${TYPE_LABEL[t.task_type]||t.task_type}</span></td>
+        <td style="font-size:13px">${esc(clientName)}</td>
+        <td>${getDuePlain(t.due_date)}</td>
+        <td style="font-size:12px">
+          ${t.follow_up_date
+            ? (() => {
+                const diff = Math.floor((new Date(new Date().toISOString().slice(0,10)) - new Date(t.follow_up_date)) / 86400000);
+                const overdue = diff > 0;
+                return `<span style="color:${overdue ? '#ef4444' : 'var(--mid-text)'};font-weight:${overdue ? '600' : '400'}">
+                  ${t.follow_up_date}${overdue ? ' (' + diff + 'd)' : ''}
+                </span>`;
+              })()
+            : 'â?}
+        </td>
+        <td onclick="event.stopPropagation()">
+          <select class="status-select" onchange="statusSelectChange('${t.id}',this)">
+            ${!WORKFLOW_STATUSES.has(t.status) ? `
+            <option value="pending"   ${t.status==='pending'  ?'selected':''}>å¾å¤ç?/option>
+            <option value="contacted" ${t.status==='contacted'?'selected':''}>å·²èç³?/option>
+            <option value="quoting"   ${t.status==='quoting'  ?'selected':''}>æ¥ä»·ä¸?/option>
+            <option value="completed" ${t.status==='completed'?'selected':''}>å·²å®æ?/option>
+            <option value="abandoned" ${t.status==='abandoned'?'selected':''}>å·²æ¾å¼?/option>
+            ` : `
+            <option value="pending_issue"  ${t.status==='pending_issue'  ?'selected':''}>å¾åºå?/option>
+            <option value="pending_sign"   ${t.status==='pending_sign'   ?'selected':''}>å¾ç­¾å­?/option>
+            <option value="pending_entry"  ${t.status==='pending_entry'  ?'selected':''}>å¾å½å?/option>
+            <option value="annual_tracking"${t.status==='annual_tracking'?'selected':''}>å¹´ä»è¿åº¦</option>
+            <option value="app_install"    ${t.status==='app_install'    ?'selected':''}>APPå®è£</option>
+            <option value="completed"      ${t.status==='completed'      ?'selected':''}>å·²å®æ?/option>
+            `}
+          </select>
+        </td>
+        <td onclick="event.stopPropagation()" style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="openEditTaskModal('${t.id}')">ç¼è¾</button>
+          <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="confirmDelete('${t.id}')">å é¤</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Due Date Helpers
+// âââââââââââââââââââââââââââââââââââââââââ
+function getDueHtml(due) {
+  if (!due) return `<span class="task-card-due due-none">â?æ æªæ­¢æ¥æ?/span>`;
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const dueDate  = new Date(due + 'T00:00:00');
+  const diff     = Math.ceil((dueDate - today) / 86400000);
+  if (diff < 0)  return `<span class="task-card-due due-overdue">â?é¾æ ${Math.abs(diff)} å¤?/span>`;
+  if (diff === 0)return `<span class="task-card-due due-today">â?ä»å¤©å°æ</span>`;
+  if (diff <= 7) return `<span class="task-card-due due-soon">â?${diff} å¤©å</span>`;
+  return `<span class="task-card-due due-normal">ð ${due}</span>`;
+}
+function getDuePlain(due) {
+  if (!due) return '<span style="color:var(--mid-text)">â?/span>';
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const dueDate = new Date(due + 'T00:00:00');
+  const diff    = Math.ceil((dueDate - today) / 86400000);
+  if (diff < 0)  return `<span style="color:var(--red);font-weight:500">é¾æ ${Math.abs(diff)} å¤?/span>`;
+  if (diff === 0)return `<span style="color:#b06000;font-weight:500">ä»å¤©</span>`;
+  return `<span style="font-size:13px">${due}</span>`;
+}
+
+function getFollowUpHtml(task) {
+  if (!task.follow_up_date) return '';
+  const today = new Date().toISOString().slice(0, 10);
+  const diff = Math.floor((new Date(today) - new Date(task.follow_up_date)) / 86400000);
+  const isOverdue = diff > 0;
+  const dateStr = task.follow_up_date;
+
+  let html = '';
+  if (isOverdue) {
+    html = `<div style="font-size:11px;color:#ef4444;font-weight:600;margin-top:4px">ð ${t('followup_prefix')}${dateStr}ï¼?{t('followup_overdue_days').replace('{n}', diff)}ï¼?/div>`;
+  } else {
+    html = `<div style="font-size:11px;color:var(--mid-text);margin-top:4px">ð ${t('followup_prefix')}${dateStr}</div>`;
+  }
+
+  if (task.follow_up_count > 0) {
+    html += `<span class="followup-count-pill" style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;margin-top:2px;display:inline-block">${t('followup_count').replace('{n}', task.follow_up_count)}</span>`;
+  }
+  return html;
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Switch View
+// âââââââââââââââââââââââââââââââââââââââââ
+function switchView(view) {
+  currentView = view;
+  document.getElementById('kanban-view').style.display = view === 'kanban' ? '' : 'none';
+  document.getElementById('list-view').style.display   = view === 'list'   ? '' : 'none';
+  document.getElementById('btn-kanban').classList.toggle('active', view === 'kanban');
+  document.getElementById('btn-list').classList.toggle('active',   view === 'list');
+  applyFilters();
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Quick Status Update
+// âââââââââââââââââââââââââââââââââââââââââ
+async function snoozeAndRefresh(taskId) {
+  try {
+    const { error } = await db.rpc('fn_snooze_task', {
+      p_task_id: taskId,
+      p_days: 3
+    });
+    if (error) throw error;
+    showToast(t('followup_done') + ' â?, 'success');
+    await loadTasks();
+  } catch(e) {
+    showToast('æä½å¤±è´¥ï¼? + e.message, 'error');
+  }
+}
+
+async function quickStatus(taskId, newStatus) {
+  try {
+    const { error } = await db.from('tasks').update({ status: newStatus }).eq('id', taskId);
+    if (error) throw error;
+    const label = STATUS_LABEL[newStatus] || newStatus;
+    showToast(`å·²æ è®°ä¸ºã?{label}ãâ`, 'success');
+
+    // Post-completion hooks for renewal workflow
+    if (newStatus === 'completed') {
+      await onTaskCompleted(taskId);
+    }
+
+    await loadTasks();
+  } catch(e) { showToast('æ´æ°å¤±è´¥ï¼? + e.message, 'error'); }
+}
+
+// ââ Post-completion workflow triggers ââ
+async function onTaskCompleted(taskId) {
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task || task.task_type !== 'renewal_workflow') return;
+
+  const title = task.title || '';
+
+  // Case 1: åæ¶æ§ä¿å?task â?set linked policy to cancelled
+  if (title.includes('åæ¶æ§ä¿å?)) {
+    if (task.policy_id) {
+      await db.from('policies').update({ status: 'cancelled' }).eq('id', task.policy_id);
+      if (task.customer_code) {
+        await db.from('policy_changes').insert({
+          policy_id: task.policy_id, customer_code: task.customer_code,
+          change_type: 'cancellation', summary: 'æ§ä¿åå·²åæ¶ï¼ç»­ä¿æµç¨?â?åæ´ä¿é©å¬å¸ï¼?
+        }).catch(() => {});
+      }
+      showToast('æ§ä¿åå·²æ è®°ä¸ºå·²åæ¶', 'success');
+    }
+    return;
+  }
+
+  // Case 2: åæ¶ä¿å task (from cancel decision) â?set policy to cancelled
+  if (title.includes('åæ¶ä¿å') && !title.includes('æ§ä¿å?)) {
+    if (task.policy_id) {
+      await db.from('policies').update({ status: 'cancelled' }).eq('id', task.policy_id);
+      if (task.customer_code) {
+        await db.from('policy_changes').insert({
+          policy_id: task.policy_id, customer_code: task.customer_code,
+          change_type: 'cancellation', summary: 'å®¢æ·å³å®åæ¶ä¿é©'
+        }).catch(() => {});
+      }
+      showToast('ä¿åå·²æ è®°ä¸ºå·²åæ¶?, 'success');
+    }
+    return;
+  }
+
+  // Case 3: æ°ä¿ååºåç­¾å­?task â?create task 3 (æ°ä¿åå½å?
+  if (title.includes('æ°ä¿ååºåç­¾å­?)) {
+    const now = new Date();
+    const newTask = {
+      customer_code: task.customer_code,
+      policy_id: task.policy_id,
+      title: `[ç»­ä¿] æ°ä¿åå½å?â?${task.new_insurer || ''}`,
+      description: task.description,
+      task_type: 'renewal_workflow',
+      status: 'pending_entry',
+      due_date: addDays(now, 3),
+      new_insurer: task.new_insurer,
+      new_premium: task.new_premium,
+      payment_type: task.payment_type,
+      has_app_discount: task.has_app_discount,
+      workflow_id: task.workflow_id,
+      policy_type: task.policy_type,
+    };
+    const { error } = await db.from('tasks').insert(newTask);
+    if (!error) showToast('å·²èªå¨åå»?æ°ä¿åå½å?ä»»å¡', 'success');
+    return;
+  }
+
+  // Case 4: pending_entry task completed via premModal â?handled in completePremModalSave
+  // (task 4 creation and new policy creation happen there)
+}
+
+function addDays(d, n) {
+  const r = new Date(d); r.setDate(r.getDate() + n);
+  return r.toISOString().split('T')[0];
+}
+function addOneYear(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString().split('T')[0];
+}
+
+// ââ View Mode Switch ââ
+function switchViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('vtab-regular').classList.toggle('active', mode === 'regular');
+  document.getElementById('vtab-workflow').classList.toggle('active', mode === 'workflow');
+  // Reset summary filter to 'all' when switching
+  summaryFilter = 'all';
+  document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('active-card'));
+  document.querySelector('.summary-card').classList.add('active-card');
+  applyFilters();
+}
+
+// ââ Workflow next step ââ
+async function quickWorkflowNext(taskId, nextStatus) {
+  try {
+    const { error } = await db.from('tasks').update({ status: nextStatus }).eq('id', taskId);
+    if (error) throw error;
+    showToast(`â?å·²æ¨è¿è³ã?{STATUS_LABEL[nextStatus]}ã`, 'success');
+
+    // Post-completion hooks for renewal workflow
+    if (nextStatus === 'completed') {
+      await onTaskCompleted(taskId);
+    }
+
+    await loadTasks();
+  } catch(e) { showToast('æ´æ°å¤±è´¥ï¼? + e.message, 'error'); }
+}
+
+// ââ Status select change (handles pending_entryâcomplete specially) ââ
+function statusSelectChange(taskId, selectEl) {
+  const newStatus = selectEl.value;
+  if (newStatus === 'completed') {
+    const task = allTasks.find(t => t.id === taskId);
+    if (task && task.task_type === 'renewal_workflow') {
+      if (task.status === 'pending_entry') {
+        openPremModal(taskId);
+        selectEl.value = task.status;
+        return;
+      }
+    }
+    if (task && task.task_type === 'change_workflow') {
+      if (task.status === 'pending_entry') {
+        completeChangeEntry(taskId);
+        selectEl.value = task.status;
+        return;
+      }
+    }
+  }
+  quickStatus(taskId, newStatus);
+}
+
+// ââ Change workflow: å½å completion â?mark done + redirect to edit policy ââ
+async function completeChangeEntry(taskId) {
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  // Check if this is a binder policy â?open special modal instead
+  if (task.policy_id) {
+    try {
+      const { data: pol } = await db.from('policies')
+        .select('id, policy_number, premium_amount, payment_type, insurer')
+        .eq('id', task.policy_id).single();
+      if (pol && pol.policy_number && pol.policy_number.startsWith('BINDER-')) {
+        openBinderModal(taskId, pol);
+        return;
+      }
+    } catch(e) { /* fall through to normal flow */ }
+  }
+
+  try {
+    const { error } = await db.from('tasks').update({ status: 'completed' }).eq('id', taskId);
+    if (error) throw error;
+    showToast('å½åå®æ â?è¯·æ´æ°ä¿åä¿¡æ?, 'success');
+    // Redirect to policy page for editing
+    if (task.policy_id) {
+      setTimeout(() => {
+        window.location.href = `ams_policies.html?edit_policy=${task.policy_id}`;
+      }, 800);
+    } else {
+      await loadTasks();
+    }
+  } catch(e) { showToast('å®æå¤±è´¥ï¼? + e.message, 'error'); }
+}
+
+// ââ Binder Modal ââ
+function openBinderModal(taskId, policy) {
+  binderModalTaskId = taskId;
+  binderModalPolicy = policy;
+
+  const task = allTasks.find(t => t.id === taskId);
+  const clientName = task?.clients?.full_name || task?.customer_code || 'â?;
+
+  document.getElementById('bm-client').textContent = clientName + (task?.customer_code ? ` (${task.customer_code})` : '');
+  document.getElementById('bm-insurer').textContent = policy.insurer || 'â?;
+  document.getElementById('bm-binder-num').textContent = policy.policy_number;
+  document.getElementById('bm-current-prem').textContent = policy.premium_amount
+    ? '$' + Number(policy.premium_amount).toLocaleString('en-CA', { minimumFractionDigits: 2 })
+    : 'â?;
+
+  // Pre-fill fields
+  document.getElementById('bm-policy-number').value = '';
+  document.getElementById('bm-annual-input').value = policy.premium_amount ? Number(policy.premium_amount).toFixed(2) : '';
+  bmPayType = policy.payment_type || 'annual';
+  bmSelectPay(bmPayType);
+  onBmAnnualChange();
+
+  document.getElementById('binder-modal-overlay').classList.add('open');
+}
+
+function closeBinderModal() {
+  document.getElementById('binder-modal-overlay').classList.remove('open');
+  binderModalTaskId = null;
+  binderModalPolicy = null;
+}
+
+function safeCloseBinderModal() {
+  if (!confirm('ç¡®å®è¦å³é­åï¼æªä¿å­çåå®¹å°ä¸¢å¤±ã?)) return;
+  closeBinderModal();
+}
+
+function bmSelectPay(pt) {
+  bmPayType = pt;
+  document.getElementById('bm-radio-annual').style.borderColor  = pt === 'annual'  ? '#e8a020' : '#e2e8f0';
+  document.getElementById('bm-radio-monthly').style.borderColor = pt === 'monthly' ? '#e8a020' : '#e2e8f0';
+  document.querySelector('input[name="bm-pay"][value="annual"]').checked  = pt === 'annual';
+  document.querySelector('input[name="bm-pay"][value="monthly"]').checked = pt === 'monthly';
+  onBmAnnualChange();
+}
+
+function onBmAnnualChange() {
+  const annual = parseFloat(document.getElementById('bm-annual-input').value) || 0;
+  const ins = binderModalPolicy?.insurer || '';
+  const feeRate = ins.toLowerCase().includes('intact') ? 0.012 : 0.013;
+  const monthly = annual > 0 ? (annual * (1 + feeRate) / 12) : null;
+  const mStr = monthly ? `$${monthly.toFixed(2)}` : null;
+  document.getElementById('bm-monthly-display').textContent = mStr ? `æä»ï¼?{mStr} / æ` : 'æä»ï¼â?;
+  document.getElementById('bm-annual-lbl').textContent  = annual > 0 ? `ä¸æ¬¡æ?$${Number(annual).toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : 'ä¸æ¬¡æ§ç¼´æ¸?;
+  document.getElementById('bm-monthly-lbl').textContent = mStr ? `çº?${mStr} / æ` : 'çº?$â?/ æ?;
+}
+
+async function completeBinderSave() {
+  const officialNumber = document.getElementById('bm-policy-number').value.trim();
+  if (!officialNumber) { showToast('è¯·è¾å¥æ­£å¼ä¿åå·', 'error'); return; }
+
+  const annual = parseFloat(document.getElementById('bm-annual-input').value);
+  if (!annual || annual <= 0) { showToast('è¯·è¾å¥ææå¹´ä¿è´¹', 'error'); return; }
+
+  if (!binderModalTaskId || !binderModalPolicy) return;
+
+  const btn = document.getElementById('bm-submit-btn');
+  btn.textContent = 'å¤çä¸­â?; btn.disabled = true;
+
+  try {
+    // 1. Mark task completed
+    const { error: tErr } = await db.from('tasks').update({ status: 'completed' }).eq('id', binderModalTaskId);
+    if (tErr) throw tErr;
+
+    // 2. Update policy: replace binder number with official number, update premium
+    const policyId = binderModalPolicy.id;
+    const { error: pErr } = await db.from('policies').update({
+      policy_number:  officialNumber,
+      premium_amount: annual,
+      payment_type:   bmPayType,
+    }).eq('id', policyId);
+    if (pErr) throw pErr;
+
+    // 3. Update policy_premiums record (latest for this policy)
+    const { data: premRecs } = await db.from('policy_premiums')
+      .select('id')
+      .eq('policy_id', policyId)
+      .order('effective_date', { ascending: false })
+      .limit(1);
+    if (premRecs && premRecs.length > 0) {
+      await db.from('policy_premiums').update({
+        premium_amount: annual,
+        payment_type:   bmPayType,
+      }).eq('id', premRecs[0].id);
+    }
+
+    closeBinderModal();
+    showToast(`â?ä¿åå·å·²æ´æ°ä¸?${officialNumber}`, 'success');
+
+    // Redirect to policy detail
+    setTimeout(() => {
+      window.location.href = `ams_policies.html?edit_policy=${policyId}`;
+    }, 800);
+
+  } catch(e) {
+    showToast('æ´æ°å¤±è´¥ï¼? + e.message, 'error');
+  } finally {
+    btn.textContent = 'â?ç¡®è®¤å¹¶å®æ?; btn.disabled = false;
+  }
+}
+
+// Backdrop click for binder modal
+document.addEventListener('DOMContentLoaded', () => {
+  const bmOverlay = document.getElementById('binder-modal-overlay');
+  if (bmOverlay) {
+    bmOverlay.addEventListener('click', function(e) {
+      if (e.target === this) safeCloseBinderModal();
+    });
+  }
+});
+
+// ââ Premium Modal ââ
+function openPremModal(taskId) {
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return;
+  premModalTaskId   = taskId;
+  premModalPolicyId = task.policy_id || null;
+  pmPayType         = task.payment_type || 'annual';
+
+  const clientName = task.clients?.full_name || task.customer_code || 'â?;
+  document.getElementById('pm-client').textContent  = clientName + (task.customer_code ? ' (' + task.customer_code + ')' : '');
+  document.getElementById('pm-insurer').textContent = task.new_insurer || 'â?;
+  const payLbl = task.payment_type === 'annual' ? 'å¹´ä» Annual' : task.payment_type === 'monthly' ? 'æä» Monthly' : 'â?;
+  document.getElementById('pm-paytype').textContent = payLbl;
+  const exp = task.new_premium ? '$' + Number(task.new_premium).toLocaleString('en-CA',{minimumFractionDigits:2}) : 'â?;
+  document.getElementById('pm-expected').textContent = exp;
+
+  // Pre-fill with expected premium
+  const annualInput = document.getElementById('pm-annual-input');
+  annualInput.value = task.new_premium ? Number(task.new_premium).toFixed(2) : '';
+
+  // Show policy number field if this is a switch-insurer workflow (task has new_insurer)
+  const pnumWrap = document.getElementById('pm-policy-number-wrap');
+  const isNewPolicyEntry = !!task.new_insurer && task.title && task.title.includes('å½å');
+  pnumWrap.style.display = isNewPolicyEntry ? '' : 'none';
+  document.getElementById('pm-policy-number').value = '';
+
+  // Set payment radio
+  pmSelectPay(pmPayType);
+  onPmAnnualChange();
+
+  document.getElementById('prem-modal-overlay').classList.add('open');
+}
+
+function closePremModal() {
+  document.getElementById('prem-modal-overlay').classList.remove('open');
+  premModalTaskId = null; premModalPolicyId = null;
+}
+function safeClosePremModal() {
+  if (!confirm('ç¡®å®è¦å³é­åï¼æªä¿å­çåå®¹å°ä¸¢å¤±ã?)) return;
+  closePremModal();
+}
+
+function pmSelectPay(pt) {
+  pmPayType = pt;
+  document.getElementById('pm-radio-annual').style.borderColor  = pt==='annual'  ? '#e8a020' : '#e2e8f0';
+  document.getElementById('pm-radio-monthly').style.borderColor = pt==='monthly' ? '#e8a020' : '#e2e8f0';
+  document.querySelector('input[name="pm-pay"][value="annual"]').checked  = pt === 'annual';
+  document.querySelector('input[name="pm-pay"][value="monthly"]').checked = pt === 'monthly';
+  onPmAnnualChange();
+}
+
+function onPmAnnualChange() {
+  const annual = parseFloat(document.getElementById('pm-annual-input').value) || 0;
+  // Determine type and insurer from current task
+  const task = premModalTaskId ? allTasks.find(t => t.id === premModalTaskId) : null;
+  const ptype = task?.policy_type || 'auto';
+  const ins   = task?.new_insurer || '';
+  let monthly;
+  if (ptype === 'home') {
+    monthly = annual > 0 ? (annual * 1.11 / 12) : null;
+  } else {
+    const feeRate = ins.toLowerCase().includes('intact') ? 0.012 : 0.013;
+    monthly = annual > 0 ? (annual * (1 + feeRate) / 12) : null;
+  }
+  const mStr = monthly ? `$${monthly.toFixed(2)}` : null;
+  document.getElementById('pm-monthly-display').textContent = mStr ? `æä»ï¼?{mStr} / æ` : 'æä»ï¼â?;
+  document.getElementById('pm-annual-lbl').textContent  = annual > 0 ? `ä¸æ¬¡æ?$${Number(annual).toLocaleString('en-CA',{minimumFractionDigits:2})}` : 'ä¸æ¬¡æ§ç¼´æ¸?;
+  document.getElementById('pm-monthly-lbl').textContent = mStr ? `çº?${mStr} / æ` : 'çº?$â?/ æ?;
+}
+
+async function completePremModalSkip() {
+  // Just mark the task complete without writing premium
+  if (!premModalTaskId) return;
+  await quickStatus(premModalTaskId, 'completed');
+  closePremModal();
+}
+
+async function completePremModalSave() {
+  const annual = parseFloat(document.getElementById('pm-annual-input').value);
+  if (!annual || annual <= 0) { showToast('è¯·è¾å¥ææå¹´ä¿è´¹', 'error'); return; }
+  if (!premModalTaskId) return;
+
+  const task = allTasks.find(t => t.id === premModalTaskId);
+  const isNewPolicyEntry = !!task?.new_insurer && task.title && task.title.includes('å½å');
+
+  // If this is a switch-insurer workflow, require new policy number
+  const newPolicyNumber = document.getElementById('pm-policy-number').value.trim();
+  if (isNewPolicyEntry && !newPolicyNumber) {
+    showToast('è¯·è¾å¥æ°ä¿åå?, 'error'); return;
+  }
+
+  try {
+    // 1. Mark this task completed
+    const { error: taskErr } = await db.from('tasks').update({ status: 'completed' }).eq('id', premModalTaskId);
+    if (taskErr) throw taskErr;
+
+    if (isNewPolicyEntry && task) {
+      // âââ?Switch-insurer workflow: create new policy + task 4 âââ?
+      // Get old policy details to copy extra_fields and calculate dates
+      let oldPolicy = null;
+      if (task.policy_id) {
+        const { data } = await db.from('policies').select('*').eq('id', task.policy_id).single();
+        oldPolicy = data;
+      }
+
+      const effectiveDate = oldPolicy ? oldPolicy.expiry_date : new Date().toISOString().split('T')[0];
+      const expiryDate = addOneYear(effectiveDate);
+
+      // Create new policy record
+      const newPolicy = {
+        customer_code:  task.customer_code,
+        policy_number:  newPolicyNumber,
+        insurer:        task.new_insurer,
+        policy_type:    task.policy_type || (oldPolicy?.policy_type) || 'auto',
+        effective_date: effectiveDate,
+        expiry_date:    expiryDate,
+        premium_amount: annual,
+        payment_type:   pmPayType,
+        status:         'active',
+        extra_fields:   oldPolicy?.extra_fields || {},
+        notes:          `ç±ç»­ä¿æµç¨èªå¨åå»ºï¼æ§ä¿å? ${oldPolicy?.policy_number || ''}`,
+      };
+
+      const { data: createdPolicy, error: newPolErr } = await db.from('policies').insert(newPolicy).select().single();
+      if (newPolErr) throw newPolErr;
+
+      // Write premium history record for the new policy
+      if (createdPolicy) {
+        await db.from('policy_premiums').insert({
+          policy_id:      createdPolicy.id,
+          effective_date: effectiveDate,
+          expiry_date:    expiryDate,
+          premium_amount: annual,
+          payment_type:   pmPayType || null,
+        }).catch(() => {});
+
+        // Write policy_change record for the new policy
+        await db.from('policy_changes').insert({
+          policy_id: createdPolicy.id,
+          customer_code: task.customer_code,
+          change_type: 'renewal',
+          change_date: new Date().toISOString().split('T')[0],
+          summary: `æ°ä¿ååå»?â?${task.new_insurer}ï¼?{pmPayType === 'annual' ? 'å¹´ä»' : 'æä»'} $${annual.toLocaleString('en-CA', { minimumFractionDigits: 2 })}/å¹´`,
+        }).catch(() => {});
+      }
+
+      // Create task 4: ç¡®è®¤APPå®è£/æä»æ¬¾è®¡å?      const now = new Date();
+      await db.from('tasks').insert({
+        customer_code: task.customer_code,
+        policy_id: createdPolicy?.id || task.policy_id,
+        title: `[ç»­ä¿] ç¡®è®¤APPå®è£/æä»æ¬¾è®¡å?â?${task.new_insurer}`,
+        description: task.description,
+        task_type: 'renewal_workflow',
+        status: 'app_install',
+        due_date: addDays(now, 5),
+        new_insurer: task.new_insurer,
+        new_premium: annual,
+        payment_type: pmPayType,
+        workflow_id: task.workflow_id,
+        policy_type: task.policy_type,
+      });
+
+      showToast(`â?æ°ä¿åå·²åå»ºï¼?${newPolicyNumber})ï¼å·²çæAPPå®è£/æä»ç¡®è®¤ä»»å¡`, 'success');
+    } else {
+      // âââ?Regular premium update (direct renewal or other) âââ?      if (premModalPolicyId) {
+        const updateData = {
+          premium_amount: annual,
+          payment_type:   pmPayType,
+        };
+        const { error: polErr } = await db.from('policies').update(updateData).eq('id', premModalPolicyId);
+        if (polErr) {
+          showToast(`ä»»å¡å·²å®æï¼ä½ä¿åä¿è´¹æ´æ°å¤±è´¥ï¼${polErr.message}`, 'error');
+          closePremModal();
+          await loadTasks();
+          return;
+        }
+
+        // Insert premium history record for the renewal period
+        if (task) {
+          const { data: polData } = await db.from('policies').select('expiry_date').eq('id', premModalPolicyId).single();
+          if (polData) {
+            const oldExpiry = polData.expiry_date;
+            const renewExpiry = addOneYear(oldExpiry);
+            await db.from('policy_premiums').insert({
+              policy_id:      premModalPolicyId,
+              effective_date: oldExpiry,
+              expiry_date:    renewExpiry,
+              premium_amount: annual,
+              payment_type:   pmPayType || null,
+            }).catch(() => {});
+          }
+        }
+
+        if (task?.customer_code) {
+          await db.from('policy_changes').insert({
+            policy_id: premModalPolicyId,
+            customer_code: task.customer_code,
+            change_type: 'renewal',
+            change_date: new Date().toISOString().split('T')[0],
+            summary: `ç»­ä¿å½åå®æ â?${task.new_insurer || 'ä¿é©å¬å¸'}ï¼?{pmPayType === 'annual' ? 'å¹´ä»' : 'æä»'} $${annual.toLocaleString('en-CA', { minimumFractionDigits: 2 })}/å¹´`,
+          }).catch(() => {});
+        }
+      }
+      showToast(`â?å½åå®æï¼ä¿åå¹´ä¿è´¹å·²æ´æ°ä¸º $${annual.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'success');
+    }
+
+    closePremModal();
+    await loadTasks();
+  } catch(e) {
+    showToast('ä¿å­å¤±è´¥ï¼? + e.message, 'error');
+  }
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Renewal Scan
+// âââââââââââââââââââââââââââââââââââââââââ
+async function runRenewalScan() {
+  const btn = document.getElementById('run-renewal-btn');
+  btn.textContent = 'æ«æä¸­â?; btn.disabled = true;
+  try {
+    const { error } = await db.rpc('fn_auto_create_renewal_tasks');
+    if (error) throw error;
+    showToast('ç»­ä¿æéæ«æå®æï¼æ°ä»»å¡å·²çæ?â?, 'success');
+    await loadTasks();
+  } catch(e) { showToast('æ«æå¤±è´¥ï¼? + e.message, 'error'); }
+  finally { btn.textContent = 'ð æ«æç»­ä¿æé'; btn.disabled = false; }
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Modal: New / Edit Task
+// âââââââââââââââââââââââââââââââââââââââââ
+function openNewTaskModal() {
+  editingTaskId = null;
+  document.getElementById('task-modal-title').textContent = 'æ°å¢ä»»å¡';
+  document.getElementById('task-save-btn').textContent    = 'ä¿å­ä»»å¡';
+  clearTaskForm();
+  document.getElementById('task-modal').classList.add('open');
+}
+
+async function openEditTaskModal(id) {
+  editingTaskId = id;
+  document.getElementById('task-modal-title').textContent = 'ç¼è¾ä»»å¡';
+  document.getElementById('task-save-btn').textContent    = 'æ´æ°ä»»å¡';
+  clearTaskForm();
+  try {
+    const { data, error } = await db.from('tasks').select('*').eq('id', id).single();
+    if (error) throw error;
+    document.getElementById('f-title').value        = data.title || '';
+    document.getElementById('f-task-type').value    = data.task_type || 'manual';
+    document.getElementById('f-task-status').value  = data.status || 'pending';
+    document.getElementById('f-task-code').value    = data.customer_code || '';
+    document.getElementById('f-due-date').value     = data.due_date || '';
+    document.getElementById('f-follow-up-date').value = data.follow_up_date || '';
+    document.getElementById('f-description').value  = data.description || '';
+    if (data.customer_code) lookupTaskClient();
+    document.getElementById('task-modal').classList.add('open');
+  } catch(e) { showToast('å è½½å¤±è´¥ï¼? + e.message, 'error'); }
+}
+
+function closeTaskModal() { document.getElementById('task-modal').classList.remove('open'); }
+function safeCloseTaskModal() {
+  if (!confirm('ç¡®å®è¦å³é­åï¼æªä¿å­çåå®¹å°ä¸¢å¤±ã?)) return;
+  closeTaskModal();
+}
+
+function clearTaskForm() {
+  ['f-title','f-task-code','f-due-date','f-follow-up-date','f-description'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('f-task-type').value   = 'manual';
+  document.getElementById('f-task-status').value = 'pending';
+  document.getElementById('f-title-err').textContent = '';
+  document.getElementById('task-client-result').textContent = '';
+}
+
+async function lookupTaskClient() {
+  const code   = document.getElementById('f-task-code').value.trim().toUpperCase();
+  const result = document.getElementById('task-client-result');
+  clearTimeout(lookupTimer);
+  if (!/^[A-Z]{4}[0-9]{2}$/.test(code)) { result.textContent = ''; return; }
+  lookupTimer = setTimeout(async () => {
+    try {
+      const { data } = await db.from('clients').select('full_name').eq('customer_code', code).single();
+      if (data) { result.textContent = 'â?' + data.full_name; result.style.color = 'var(--green)'; }
+      else       { result.textContent = 'æ¾ä¸å°æ­¤å®¢æ·ç¼ç '; result.style.color = 'var(--red)'; }
+    } catch { result.textContent = 'æ¾ä¸å°æ­¤å®¢æ·ç¼ç '; result.style.color = 'var(--red)'; }
+  }, 400);
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Save Task
+// âââââââââââââââââââââââââââââââââââââââââ
+async function saveTask() {
+  const title = document.getElementById('f-title').value.trim();
+  document.getElementById('f-title-err').textContent = '';
+  if (!title) { document.getElementById('f-title-err').textContent = 'æ é¢ä¸ºå¿å¡«é¡¹'; return; }
+
+  const code = document.getElementById('f-task-code').value.trim().toUpperCase() || null;
+  const payload = {
+    title:         title,
+    task_type:     document.getElementById('f-task-type').value,
+    status:        document.getElementById('f-task-status').value,
+    customer_code: code || null,
+    due_date:      document.getElementById('f-due-date').value || null,
+    follow_up_date: document.getElementById('f-follow-up-date').value || null,
+    description:   document.getElementById('f-description').value.trim() || null,
+  };
+
+  const btn = document.getElementById('task-save-btn');
+  btn.textContent = 'ä¿å­ä¸­â?; btn.disabled = true;
+  try {
+    let error;
+    if (editingTaskId) {
+      ({ error } = await db.from('tasks').update(payload).eq('id', editingTaskId));
+    } else {
+      ({ error } = await db.from('tasks').insert(payload));
+    }
+    if (error) throw error;
+    closeTaskModal();
+    showToast(editingTaskId ? 'ä»»å¡å·²æ´æ?â? : 'ä»»å¡å·²åå»?â?, 'success');
+    await loadTasks();
+  } catch(e) {
+    showToast('ä¿å­å¤±è´¥ï¼? + e.message, 'error');
+  } finally {
+    btn.textContent = editingTaskId ? 'æ´æ°ä»»å¡' : 'ä¿å­ä»»å¡';
+    btn.disabled = false;
+  }
+}
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Confirm Delete
+// âââââââââââââââââââââââââââââââââââââââââ
+function confirmDelete(taskId) {
+  const task = allTasks.find(t => t.id === taskId);
+  document.getElementById('confirm-title').textContent = 'å é¤ä»»å¡';
+  document.getElementById('confirm-msg').textContent =
+    `ç¡®å®è¦å é¤ã?{task?.title || 'æ­¤ä»»å?}ãåï¼æ­¤æä½æ æ³æ¤éã`;
+  confirmCallback = async () => {
+    try {
+      const { error } = await db.from('tasks').delete().eq('id', taskId);
+      if (error) throw error;
+      showToast('ä»»å¡å·²å é?, 'success');
+      await loadTasks();
+    } catch(e) { showToast('å é¤å¤±è´¥ï¼? + e.message, 'error'); }
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
+function safeCloseConfirm() {
+  if (!confirm('ç¡®å®è¦å³é­åï¼æªä¿å­çåå®¹å°ä¸¢å¤±ã?)) return;
+  closeConfirm();
+}
+
+document.getElementById('confirm-ok-btn').addEventListener('click', async () => {
+  closeConfirm();
+  if (confirmCallback) { await confirmCallback(); confirmCallback = null; }
+});
+
+// âââââââââââââââââââââââââââââââââââââââââ
+// Helpers
+// âââââââââââââââââââââââââââââââââââââââââ
+function esc(str) {
+  if (!str && str !== 0) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modals on backdrop click
+['task-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) {
+      if (!confirm('ç¡®å®è¦å³é­åï¼æªä¿å­çåå®¹å°ä¸¢å¤±ã?)) return;
+      this.classList.remove('open');
+    }
+  });
+});
+document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+</script>
+<script src="ams_i18n.js"></script>
+</body>
+</html>
+
+

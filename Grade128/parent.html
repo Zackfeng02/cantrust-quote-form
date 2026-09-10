@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Parent analytics for MapleQuest learner progress.">
+  <title>MapleQuest · Parent view</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="parent-body">
+  <a class="skip-link" href="#parent-main">Skip to analytics</a>
+  <header class="parent-nav">
+    <a class="wordmark" href="index.html"><span class="spark" aria-hidden="true"><span></span></span>MapleQuest</a>
+    <nav class="parent-nav-links" aria-label="Parent page navigation">
+      <a href="conversation.html">今晚聊聊 · Family chat</a>
+      <a class="parent-link" href="index.html">← Student view</a>
+    </nav>
+  </header>
+
+  <main id="parent-main" class="parent-main" tabindex="-1">
+    <section class="parent-lock" id="parent-lock">
+      <div class="lock-copy">
+        <h1>See the learning, not just the score.</h1>
+        <p>Unlock a curriculum-level view of what has been assessed, where evidence is consistent, and what to practise next.</p>
+      </div>
+      <form class="pin-card" id="pin-form">
+        <label for="family-code-input">Family access code</label>
+        <input id="family-code-input" type="text" inputmode="text" pattern="[A-Za-z0-9 -]{8,10}" maxlength="10" required autocomplete="username" placeholder="ABCD2345" aria-describedby="code-help">
+        <p class="field-help" id="code-help">Shown in the learner’s mission card.</p>
+        <label for="pin-input">4-digit parent PIN</label>
+        <input id="pin-input" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="current-password" placeholder="••••" aria-describedby="pin-help">
+        <p class="field-help" id="pin-help">Set during the learner’s first visit.</p>
+        <button class="btn btn-primary btn-wide" type="submit">Open analytics →</button>
+        <p class="form-error" id="pin-error" role="alert"></p>
+      </form>
+    </section>
+
+    <section class="parent-dashboard" id="parent-dashboard" hidden>
+      <header class="dashboard-heading">
+        <div>
+          <h1 id="parent-title" tabindex="-1">Learner progress</h1>
+          <p id="parent-context"></p>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-soft" id="print-report" type="button">Print report</button>
+          <button class="btn btn-outline" id="lock-dashboard" type="button">Lock</button>
+        </div>
+      </header>
+
+      <div class="analytics-summary" id="analytics-summary"></div>
+
+      <section class="analytics-section">
+        <div class="analytics-heading">
+          <div><h2>Mapped Ontario expectations vs current evidence</h2><p>Only distinct task families count; repeating a reworded item cannot create mastery.</p></div>
+          <span class="evidence-key"><i class="key-consistent"></i> Consistent <i class="key-building"></i> Building <i class="key-unseen"></i> Not assessed</span>
+        </div>
+        <div class="subject-analytics" id="subject-analytics"></div>
+      </section>
+
+      <section class="parent-split">
+        <div class="analytics-section gap-panel">
+          <h2>Best next steps</h2>
+          <div id="next-steps"></div>
+        </div>
+        <div class="analytics-section history-panel">
+          <h2>Recent tests</h2>
+          <div id="test-history"></div>
+        </div>
+      </section>
+
+      <section class="analytics-section source-note">
+        <h2>How to read this report</h2>
+        <p>This report covers the 12 Ontario expectation groups currently mapped for the learner’s grade. It is a curriculum sample, not the complete Ontario program. An unlisted expectation has not been assessed by MapleQuest. “Not assessed” means there is not yet enough evidence; it does not mean the learner lacks the skill. Use these signals to choose practice and questions for a teacher, not to diagnose a learning difficulty.</p>
+        <div class="source-links">
+          <a href="https://www.ontario.ca/page/math-curriculum-grades-1-8" target="_blank" rel="noreferrer">Ontario math</a>
+          <a href="https://www.dcp.edu.gov.on.ca/en/curriculum/elementary-language" target="_blank" rel="noreferrer">Ontario language</a>
+          <a href="https://www.dcp.edu.gov.on.ca/en/curriculum/science-technology" target="_blank" rel="noreferrer">Ontario science</a>
+          <a href="https://www.dcp.edu.gov.on.ca/resources/en/subjects/sshg-cws" target="_blank" rel="noreferrer">Ontario social studies</a>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="curriculum.js"></script>
+  <script src="assessment.js"></script>
+  <script src="parent.js"></script>
+</body>
+</html>

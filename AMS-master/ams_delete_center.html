@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete Center - AMS</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0d1b2a;
+  --navy-light: #1e3450;
+  --navy-hover: #243d5e;
+  --accent: #e8a020;
+  --page-bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --text-1: #f0f4f8;
+  --text-2: #a8bcd0;
+  --text-3: #607a93;
+  --dark-text: #1a2e42;
+  --mid-text: #4a6478;
+  --danger: #e05252;
+}
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--page-bg);
+  color: var(--dark-text);
+  min-height: 100vh;
+  display: flex;
+}
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 0 auto 0 0;
+}
+.sidebar-logo {
+  padding: 28px 24px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.logo-mark {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-1);
+}
+.logo-mark span { color: var(--accent); }
+.logo-sub {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.sidebar-nav { flex: 1; padding: 16px 12px; }
+.nav-section-label {
+  padding: 8px 12px 4px;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  color: var(--text-2);
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--navy-hover); color: var(--text-1); }
+.nav-item.active { background: var(--navy-light); color: var(--text-1); }
+.nav-icon { width: 20px; text-align: center; }
+.main {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  height: 64px;
+  padding: 0 32px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+}
+.topbar-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+.content {
+  padding: 28px 32px;
+  display: grid;
+  gap: 20px;
+}
+.panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 24px;
+}
+.panel h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.panel p,
+.panel li {
+  color: var(--mid-text);
+  line-height: 1.6;
+}
+.panel ul {
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+.callout {
+  border-left: 4px solid var(--danger);
+  background: #fff5f5;
+  color: #8f1d1d;
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  background: #f8fafc;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AMS<span>+</span></div>
+    <div class="logo-sub">Operations</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" href="ams_dashboard.html"><span class="nav-icon">D</span><span>Dashboard</span></a>
+    <a class="nav-item" href="ams_import_archive.html"><span class="nav-icon">A</span><span>Archive Import</span></a>
+    <a class="nav-item" href="ams_data_sweeper.html"><span class="nav-icon">S</span><span>Data Sweeper</span></a>
+    <a class="nav-item active" href="ams_delete_center.html"><span class="nav-icon">X</span><span>Delete Center</span></a>
+  </nav>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-title">Delete Center</div>
+  </header>
+  <div class="content">
+    <section class="panel">
+      <h2>Archive-first deletion workflow</h2>
+      <p>This page is the landing point for the v1.6 delete-center workflow. It keeps the retention rules and preview helpers together while the database-side archive, restore, and purge routines live in <code>migration_v1.6_delete_center.sql</code>.</p>
+    </section>
+    <section class="panel">
+      <h2>Preview rules</h2>
+      <ul>
+        <li>Client batches default to a longer retention window than policy batches.</li>
+        <li>Archived batches can be purged only after <code>retention_until</code> has elapsed.</li>
+        <li>Confirmation text is case-insensitive but still exact after trimming.</li>
+      </ul>
+    </section>
+    <section class="panel callout">
+      Wire the live Supabase preview, archive, restore, and purge actions into this page after the migration is applied in the target environment.
+    </section>
+  </div>
+</main>
+<script>
+function isTypedConfirmationValid(expectedValue, typedValue) {
+  return String(expectedValue || '').trim().toUpperCase() === String(typedValue || '').trim().toUpperCase();
+}
+
+function canPurgeBatch(batch, now) {
+  const normalizedNow = now instanceof Date ? now : new Date(now || Date.now());
+  if (!batch || String(batch.status || '').trim().toLowerCase() !== 'archived') return false;
+  const retentionUntil = new Date(batch.retentionUntil || '');
+  if (Number.isNaN(retentionUntil.getTime())) return false;
+  return retentionUntil.getTime() <= normalizedNow.getTime();
+}
+
+function normalizePreviewSummary(summary) {
+  const source = summary || {};
+  const toCount = (value) => {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : 0;
+  };
+
+  const normalized = new window.Object();
+  normalized.scope = String(source.scope || '').trim().toLowerCase();
+  normalized.clientCount = toCount(source.client_count);
+  normalized.policyCount = toCount(source.policy_count);
+  normalized.policyChangeCount = toCount(source.policy_change_count);
+  normalized.taskCount = toCount(source.task_count);
+  normalized.quoteCount = toCount(source.quote_count);
+  normalized.quoteImportCount = toCount(source.quote_import_count);
+  normalized.premiumCount = toCount(source.premium_count);
+  normalized.retentionDays = toCount(source.retention_days);
+  return normalized;
+}
+
+function statusLabelForBatch(batch) {
+  const status = String((batch && batch.status) || '').trim().toLowerCase();
+  if (status === 'archived' || status === 'pending_purge') return 'Pending Purge';
+  if (status === 'restored') return 'Restored';
+  if (status === 'purged') return 'Purged';
+  return status || 'Unknown';
+}
+
+function canArchivePreview(preview, typedValue) {
+  return Boolean(preview && preview.targetKey && isTypedConfirmationValid(preview.targetKey, typedValue));
+}
+
+function getPrefillTargetFromSearch(search) {
+  const params = new URLSearchParams(String(search || '').replace(/^\?/, ''));
+  const targetType = String(params.get('target_type') || '').trim().toLowerCase();
+  if (targetType === 'client') {
+    const lookupValue = String(params.get('customer_code') || '').trim();
+    if (!lookupValue) return null;
+    return {
+      targetType: 'client',
+      lookupValue,
+      confirmationHintKey: 'delete_confirm_hint_client',
+    };
+  }
+  if (targetType === 'policy') {
+    const lookupValue = String(params.get('policy_id') || '').trim();
+    if (!lookupValue) return null;
+    return {
+      targetType: 'policy',
+      lookupValue,
+      confirmationHintKey: 'delete_confirm_hint_policy',
+    };
+  }
+  return null;
+}
+
+function buildPreviewRequest(targetType, lookupValue) {
+  const normalizedType = String(targetType || '').trim().toLowerCase();
+  const normalizedValue = String(lookupValue || '').trim();
+  return {
+    target_type: normalizedType,
+    customer_code: normalizedType === 'client' ? normalizedValue.toUpperCase() : null,
+    policy_id: normalizedType === 'policy' ? normalizedValue : null,
+  };
+}
+
+function normalizeBatchRecord(row) {
+  const source = row || {};
+  return {
+    id: source.id || '',
+    status: source.status || '',
+    statusLabel: statusLabelForBatch(source),
+    targetType: String(source.target_type || '').trim().toLowerCase(),
+    targetLabel: source.target_customer_code || source.target_policy_id || '',
+    retentionUntil: source.retention_until || null,
+    archivedAt: source.archived_at || null,
+  };
+}
+
+function resolvePreviewTargetKey(summary) {
+  const scope = String((summary && summary.scope) || '').trim().toLowerCase();
+  if (scope === 'client') {
+    return String((summary && (summary.target_customer_code || summary.preview_customer_code)) || '').trim().toUpperCase();
+  }
+  if (scope === 'policy') {
+    return String((summary && (summary.target_policy_id || summary.preview_policy_id)) || '').trim();
+  }
+  return '';
+}
+
+function buildArchiveRequest(targetType, preview, actor) {
+  const normalizedType = String(targetType || '').trim().toLowerCase();
+  const targetKey = String((preview && preview.targetKey) || '').trim();
+  if (normalizedType === 'client') {
+    return {
+      fnName: 'fn_archive_client_batch',
+      payload: {
+        target_customer_code: targetKey.toUpperCase(),
+        actor: actor || null,
+      },
+    };
+  }
+  return {
+    fnName: 'fn_archive_policy_batch',
+    payload: {
+      target_policy_id: targetKey,
+      actor: actor || null,
+    },
+  };
+}
+
+function isDeleteCenterSchemaMissingError(error) {
+  const message = String((error && error.message) || '').toLowerCase();
+  return message.includes('deletion_batches') && message.includes('schema cache');
+}
+
+function describeDeleteCenterError(error) {
+  if (isDeleteCenterSchemaMissingError(error)) {
+    return 'Delete Center migration is not applied in this Supabase project yet.';
+  }
+  return String((error && error.message) || 'Unknown error');
+}
+
+function extractPreviewSummary(rows) {
+  const firstRow = Array.isArray(rows) ? rows[0] : null;
+  if (!firstRow) return null;
+  return {
+    ...(firstRow.preview_summary || {}),
+    preview_target_type: firstRow.preview_target_type || null,
+    preview_customer_code: firstRow.preview_customer_code || null,
+    preview_policy_id: firstRow.preview_policy_id || null,
+  };
+}
+
+window.isTypedConfirmationValid = isTypedConfirmationValid;
+window.canPurgeBatch = canPurgeBatch;
+window.normalizePreviewSummary = normalizePreviewSummary;
+window.statusLabelForBatch = statusLabelForBatch;
+window.canArchivePreview = canArchivePreview;
+window.getPrefillTargetFromSearch = getPrefillTargetFromSearch;
+window.buildPreviewRequest = buildPreviewRequest;
+window.normalizeBatchRecord = normalizeBatchRecord;
+window.resolvePreviewTargetKey = resolvePreviewTargetKey;
+window.buildArchiveRequest = buildArchiveRequest;
+window.isDeleteCenterSchemaMissingError = isDeleteCenterSchemaMissingError;
+window.describeDeleteCenterError = describeDeleteCenterError;
+window.extractPreviewSummary = extractPreviewSummary;
+</script>
+</body>
+</html>

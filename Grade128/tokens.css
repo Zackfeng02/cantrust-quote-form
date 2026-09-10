@@ -1,0 +1,78 @@
+/* MapleQuest design tokens · Hum theme · all colour and type values are locked here. */
+:root {
+  --color-paper: oklch(97% 0.012 95);
+  --color-paper-2: oklch(94% 0.016 95);
+  --color-paper-3: oklch(91% 0.020 95);
+  --color-surface: oklch(99% 0.008 95);
+  --color-ink: oklch(20% 0.012 250);
+  --color-ink-2: oklch(34% 0.014 250);
+  --color-muted: oklch(42% 0.014 250);
+  --color-rule: oklch(78% 0.018 95);
+  --color-rule-strong: oklch(56% 0.025 95);
+  --color-accent: oklch(86% 0.18 95);
+  --color-accent-deep: oklch(67% 0.17 95);
+  --color-accent-soft: oklch(94% 0.07 95);
+  --color-accent-ink: oklch(20% 0.012 250);
+  --color-cyan: oklch(66% 0.18 235);
+  --color-cyan-deep: oklch(48% 0.16 235);
+  --color-cyan-soft: oklch(93% 0.045 235);
+  --color-coral: oklch(68% 0.24 18);
+  --color-coral-deep: oklch(50% 0.20 18);
+  --color-coral-soft: oklch(94% 0.045 18);
+  --color-mint: oklch(80% 0.16 150);
+  --color-mint-deep: oklch(42% 0.12 150);
+  --color-mint-soft: oklch(94% 0.04 150);
+  --color-lavender: oklch(74% 0.16 305);
+  --color-lavender-soft: oklch(94% 0.04 305);
+  --color-error: oklch(48% 0.20 25);
+  --color-error-soft: oklch(94% 0.04 25);
+  --color-focus: oklch(42% 0.17 250);
+  --color-overlay: oklch(20% 0.012 250 / 0.58);
+  --color-shadow: oklch(20% 0.012 250 / 0.14);
+  --color-shadow-soft: oklch(20% 0.012 250 / 0.08);
+  --color-transparent: oklch(97% 0.012 95 / 0);
+
+  --font-display: "Plus Jakarta Sans", "Trebuchet MS", sans-serif;
+  --font-body: "Plus Jakarta Sans", "Trebuchet MS", sans-serif;
+  --font-label: "JetBrains Mono", "Lucida Console", monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: 3rem;
+  --text-display: clamp(2.65rem, 5vw + 0.5rem, 5.15rem);
+  --text-display-small: clamp(2.2rem, 4vw + 0.5rem, 4rem);
+
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 9rem;
+
+  --radius-sm: 0.5rem;
+  --radius-input: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-card-large: 0.75rem;
+  --radius-pill: 999rem;
+
+  --rule-thin: 1px;
+  --rule-medium: 2px;
+  --rule-heavy: 3px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+}

@@ -1,0 +1,20 @@
+# Credentials & sensitive data
+New.txt
+local-config.js
+.playwright-cli/
+output/
+*.pdf
+
+# One-off import scripts with hardcoded Supabase credentials
+import_csv_to_supabase.py
+import_fixed_final.py
+import_skipped_records.py
+
+# Local Claude AI skill files
+docs/
+.worktrees/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

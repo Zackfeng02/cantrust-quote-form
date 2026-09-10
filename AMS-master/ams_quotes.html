@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>新客户报价 · AMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ams_bootstrap.js"></script>
+<style>
+:root {
+  --navy:  #0d1b2a;
+  --navy2: #152336;
+  --navy3: #1c3050;
+  --amber: #e8a020;
+  --amber2:#f5b840;
+  --green: #22c55e;
+  --red:   #ef4444;
+  --blue:  #4a9edd;
+  --text-1:#f0f4f8;
+  --text-2:#94a3b8;
+  --border:#e2e8f0;
+  --bg:    #f0f4f8;
+  --card:  #ffffff;
+  --sidebar-w:220px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:#1e293b;min-height:100vh;display:flex}
+
+.sidebar{width:var(--sidebar-w);background:var(--navy);min-height:100vh;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-mark{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text-1);letter-spacing:-.5px}
+.logo-mark span{color:var(--amber)}
+.logo-sub{font-size:10px;color:var(--text-2);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+.sidebar-nav{padding:16px 12px;flex:1}
+.nav-section-label{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;padding:4px 8px 8px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text-2);text-decoration:none;font-size:13.5px;font-weight:500;transition:all .18s;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.06);color:var(--text-1)}
+.nav-item.active{background:rgba(232,160,32,.15);color:var(--amber)}
+.nav-icon{width:18px;text-align:center;font-size:14px;flex-shrink:0}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.07)}
+.version-badge{font-size:10px;color:rgba(255,255,255,.25);font-family:'JetBrains Mono',monospace}
+
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--navy)}
+.page-title span{color:var(--amber)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--amber);color:var(--navy)}
+.btn-primary:hover{background:var(--amber2);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-green{background:#22c55e;color:#fff}
+.btn-green:hover{background:#16a34a;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:#64748b;border:1px solid var(--border)}
+.btn-ghost:hover{background:#f8fafc}
+.btn-danger{background:#fff0f0;color:var(--red);border:1px solid #ffd5d5}
+.btn-danger:hover{background:#ffe0e0}
+.btn-save{background:#3b82f6;color:#fff;font-size:14px;padding:10px 20px}
+.btn-save:hover{background:#2563eb;transform:translateY(-1px)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.content{padding:28px 32px}
+
+/* Client input area */
+.client-input-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px}
+.client-input-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.client-input-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
+.ci-group{display:flex;flex-direction:column;gap:5px}
+.ci-label{font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.4px;text-transform:uppercase}
+.ci-input{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:14px;color:#1e293b;outline:none;transition:border .18s;width:100%}
+.ci-input:focus{border-color:var(--amber)}
+.ci-select{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:14px;color:#1e293b;outline:none;background:#fff;width:100%}
+
+/* Suggest dropdown */
+.suggest-wrap{position:relative}
+.suggest-list{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:60;max-height:260px;overflow-y:auto;display:none}
+.suggest-list.open{display:block}
+.suggest-section{padding:6px 12px 4px;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid #f1f5f9}
+.suggest-item{padding:10px 14px;cursor:pointer;transition:background .12s;border-bottom:1px solid #f8fafc;display:flex;align-items:center;gap:12px}
+.suggest-item:hover{background:#f0f8ff}
+.suggest-item:last-child{border-bottom:none}
+.suggest-name{font-weight:600;font-size:14px;color:#1e293b}
+.suggest-meta{font-size:12px;color:#64748b}
+.suggest-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0}
+.badge-client{background:#dcfce7;color:#15803d}
+.badge-quote{background:#fef3c7;color:#b45309}
+.badge-declined{background:#fee2e2;color:#b91c1c}
+
+/* History quotes list */
+.history-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;overflow:hidden}
+.history-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
+.history-title{font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
+.history-count{font-size:11px;background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:10px}
+.history-list{max-height:220px;overflow-y:auto}
+.history-row{padding:10px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .12s}
+.history-row:hover{background:#f8faff}
+.history-row:last-child{border-bottom:none}
+.history-date{font-size:12px;color:#94a3b8;font-family:'JetBrains Mono',monospace;flex-shrink:0;width:80px}
+.history-type-icon{font-size:16px;flex-shrink:0}
+.history-info{flex:1;min-width:0}
+.history-info-name{font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-info-detail{font-size:11px;color:#94a3b8}
+.history-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px}
+.hs-pending{background:#fef3c7;color:#b45309}
+.hs-confirmed{background:#dcfce7;color:#15803d}
+.hs-declined{background:#fee2e2;color:#b91c1c}
+
+/* Policy tabs */
+.policy-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:5px;width:fit-content}
+.tab-btn{display:flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;color:#64748b}
+.tab-btn.active{background:var(--navy);color:var(--text-1)}
+
+/* Current insurance (optional) */
+.current-ins-card{background:linear-gradient(135deg,#f8faff,#f0f4f8);border:1px solid #dbe4ef;border-radius:12px;padding:16px 20px;margin-bottom:18px}
+.current-ins-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.current-ins-title{font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase}
+.current-ins-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.current-ins-unknown{font-size:13px;color:#94a3b8;font-style:italic;padding:8px 0}
+
+/* Summary banner */
+.summary-banner{background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:14px;padding:16px 22px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.sb-left{flex:1}
+.sb-headline{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text-1);margin-bottom:3px}
+.sb-sub{font-size:12px;color:var(--text-2)}
+.sb-right{text-align:right;flex-shrink:0}
+.sb-saving{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--amber);white-space:nowrap}
+.sb-saving.negative{color:#f87171}
+
+/* Quote cards */
+.quotes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;align-items:start}
+.quote-card{background:var(--card);border:2px solid var(--border);border-radius:16px;overflow:visible;position:relative;transition:border-color .2s,box-shadow .2s}
+.quote-card.best-card{border-color:#86efac;box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+.quote-card.warn-card{border-color:#fcd34d;box-shadow:0 0 0 3px rgba(251,191,36,.1)}
+.quote-card.selected-card{border-color:var(--amber);box-shadow:0 0 0 4px rgba(232,160,32,.2)}
+.qc-header{padding:14px 16px 12px;border-bottom:1px solid var(--border)}
+.qc-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 9px;border-radius:20px;text-transform:uppercase;margin-bottom:8px}
+.badge-quote-new{background:#e8f4ff;color:#1a6baa}
+.qc-insurer{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--navy);margin-bottom:2px}
+.qc-insurer select{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--navy);border:none;background:transparent;width:100%;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none}
+.qc-insurer select:hover{color:var(--amber)}
+.qc-period{font-size:11px;color:#94a3b8;font-family:'JetBrains Mono',monospace}
+.qc-period input{border:none;background:transparent;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;outline:none;width:100%}
+.qc-price{padding:14px 16px 12px;border-bottom:1px solid var(--border);background:#fafbfc}
+.price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.price-label{font-size:11px;color:#94a3b8;font-weight:500;flex-shrink:0;margin-right:6px}
+.price-input-wrap{display:flex;align-items:baseline;gap:2px}
+.price-currency{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#94a3b8}
+.price-input{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--navy);border:none;border-bottom:2px dashed #cbd5e1;background:transparent;width:100px;outline:none;padding:1px 2px}
+.price-input:focus{border-color:var(--amber);color:var(--amber)}
+.price-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.monthly-val{font-size:13px;font-weight:600;color:#475569;font-family:'JetBrains Mono',monospace;flex:1;text-align:right}
+.diff-pill{margin-top:8px;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px}
+.diff-save{background:#dcfce7;color:#15803d}
+.diff-more{background:#fee2e2;color:#b91c1c}
+.diff-base{background:#f1f5f9;color:#64748b}
+.diff-empty{display:none}
+.best-ribbon{position:absolute;top:-9px;right:12px;background:var(--green);color:#fff;font-size:9px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 2px 8px rgba(34,197,94,.3)}
+.selected-ribbon{position:absolute;top:-9px;left:12px;background:var(--amber);color:var(--navy);font-size:9px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+
+/* Coverage details */
+.qc-details{padding:12px 16px}
+.qc-detail-title{font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.detail-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9}
+.detail-row:last-child{border-bottom:none}
+.detail-lbl{font-size:12px;color:#64748b;flex-shrink:0}
+.detail-val{font-size:12px;font-weight:600;color:#1e293b;text-align:right}
+.detail-input{font-size:12px;font-weight:600;color:#1e293b;border:none;border-bottom:1px dashed #e2e8f0;background:transparent;text-align:right;outline:none;width:110px;padding:1px 2px}
+.detail-input:focus{border-color:var(--amber);background:#fffbf0}
+.detail-select{font-size:12px;font-weight:600;color:#1e293b;border:none;border-bottom:1px dashed #e2e8f0;background:transparent;outline:none;cursor:pointer;max-width:130px}
+.toggle-btn{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;border:none;cursor:pointer;transition:all .15s}
+.t-yes{background:#dcfce7;color:#15803d}
+.t-no{background:#f1f5f9;color:#94a3b8}
+.t-yes:hover{background:#bbf7d0}
+.t-no:hover{background:#e2e8f0}
+.remove-btn{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:18px;color:#cbd5e1;line-height:1;z-index:5;transition:color .15s}
+.remove-btn:hover{color:#ef4444}
+.select-card-btn{width:100%;margin-top:8px;padding:8px;border-radius:8px;border:2px dashed #e2e8f0;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:#94a3b8;cursor:pointer;transition:all .18s}
+.select-card-btn:hover{border-color:var(--amber);color:var(--amber);background:#fffbf0}
+.select-card-btn.is-selected{border-color:var(--amber);background:rgba(232,160,32,.08);color:var(--amber)}
+
+/* Add card */
+.add-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--card);border:2px dashed #cbd5e1;border-radius:16px;padding:28px 16px;cursor:pointer;transition:all .2s;min-height:160px}
+.add-card:hover{border-color:var(--amber);background:#fffbf0}
+.add-card-icon{font-size:26px;color:#cbd5e1;transition:color .2s}
+.add-card:hover .add-card-icon{color:var(--amber)}
+.add-card-text{font-size:13px;font-weight:600;color:#94a3b8;transition:color .2s}
+.add-card:hover .add-card-text{color:var(--amber)}
+
+/* Decision bar — sticky floating bottom center */
+.decision-bar{position:sticky;bottom:20px;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;background:var(--card);border:1px solid var(--border);border-radius:14px;margin:24px auto 18px;max-width:680px;box-shadow:0 -4px 24px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.06)}
+.decision-bar.ready{background:linear-gradient(135deg,#fffbf0,#fff8e8);border-color:#fcd34d;box-shadow:0 -4px 24px rgba(232,160,32,.15),0 2px 8px rgba(0,0,0,.06)}
+.decision-bar-left{display:flex;align-items:center;gap:12px}
+.decision-bar-hint{font-size:13px;color:#64748b}
+.decision-bar-selection{font-size:13px;font-weight:600;color:var(--amber)}
+
+/* Notes */
+.notes-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:18px}
+.notes-title{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.notes-area{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px;font-family:'Outfit',sans-serif;font-size:13px;color:#374151;resize:vertical;min-height:64px;outline:none;line-height:1.6}
+.notes-area:focus{border-color:var(--amber)}
+
+/* Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(13,27,42,.75);display:flex;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .22s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--card);border-radius:20px;width:520px;max-width:94vw;box-shadow:0 32px 80px rgba(0,0,0,.35);transform:translateY(24px) scale(.97);transition:transform .25s;overflow:hidden}
+.modal-overlay.open .modal-box{transform:none}
+.modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--navy)}
+.modal-close{background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;line-height:1;transition:color .15s}
+.modal-close:hover{color:#ef4444}
+.modal-body{padding:20px 24px}
+.modal-section{margin-bottom:18px}
+.modal-section-title{font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
+.modal-summary{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:18px}
+.modal-sum-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.modal-sum-label{color:#64748b}
+.modal-sum-val{font-weight:600;color:#1e293b;font-family:'JetBrains Mono',monospace}
+.modal-sum-val.highlight{color:var(--amber);font-family:'Syne',sans-serif;font-size:15px}
+.radio-group{display:flex;gap:10px;flex-wrap:wrap}
+.radio-option{display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .18s;flex:1}
+.radio-option:hover{border-color:#cbd5e1;background:#f8fafc}
+.radio-option.selected{border-color:var(--amber);background:rgba(232,160,32,.06)}
+.radio-option input[type=radio]{accent-color:var(--amber)}
+.radio-label{font-size:13px;font-weight:600;color:#374151}
+.modal-footer{padding:0 24px 20px;display:flex;gap:10px;justify-content:flex-end}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;transition:border .18s}
+.form-input:focus{border-color:var(--amber)}
+
+/* Config */
+.config-screen{position:fixed;inset:0;background:rgba(13,27,42,.92);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(8px)}
+.config-box{background:var(--card);border-radius:20px;padding:40px;width:420px;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+.config-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--navy);margin-bottom:6px}
+.config-sub{font-size:13px;color:#64748b;margin-bottom:24px}
+
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--navy);color:var(--text-1);padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .25s;pointer-events:none}
+.toast.show{transform:none;opacity:1}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+
+/* Task preview */
+.task-steps{display:flex;flex-direction:column;gap:6px}
+.task-step{display:flex;align-items:center;gap:10px;padding:7px 12px;background:#f8fafc;border-radius:8px;border:1px solid #f1f5f9}
+.task-step-num{font-size:13px;font-weight:600;color:#1e293b}
+.task-step-desc{font-size:11px;color:#94a3b8;margin-left:8px}
+
+@media(max-width:1000px){.quotes-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.quotes-grid{grid-template-columns:1fr}}
+@media(max-width:900px){
+  .sidebar{width:60px}.nav-label,.logo-sub,.sidebar-footer{display:none}
+  .main{margin-left:60px}.content{padding:20px 16px}
+  .client-input-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Config -->
+<div class="config-screen" id="config-screen">
+  <div class="config-box">
+    <div class="config-title" data-i18n="quote_config_title">连接数据库</div>
+    <div class="config-sub" data-i18n="config_sub">输入 Supabase 配置</div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="cfg_url_label">Project URL</label>
+      <input class="form-input" id="cfg-url" placeholder="https://xxxx.supabase.co" type="url" data-i18n="config_hint_url" data-i18n-target="placeholder">
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="cfg_key_label">Anon Key</label>
+      <input class="form-input" id="cfg-key" placeholder="eyJ..." type="password" data-i18n="config_hint_key" data-i18n-target="placeholder">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="connectDB()" data-i18n="cfg_connect">连接并进入</button>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">CAN<span>TRUST</span></div>
+    <div class="logo-sub">AMS · Insurance</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-i18n="nav_main">主菜单</div>
+    <a class="nav-item" href="ams_dashboard.html"><span class="nav-icon">⊞</span><span class="nav-label" data-i18n="nav_dashboard">仪表盘</span></a>
+    <a class="nav-item" href="ams_clients.html"><span class="nav-icon">👤</span><span class="nav-label" data-i18n="nav_clients">客户管理</span></a>
+    <a class="nav-item" href="ams_policies.html"><span class="nav-icon">📋</span><span class="nav-label" data-i18n="nav_policies">保单管理</span></a>
+    <a class="nav-item" href="ams_tasks.html"><span class="nav-icon">✓</span><span class="nav-label" data-i18n="nav_tasks">待办任务</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_business">业务</div>
+    <a class="nav-item active" href="#"><span class="nav-icon">💲</span><span class="nav-label" data-i18n="nav_quotes">新客户报价</span></a>
+    <a class="nav-item" href="ams_import_quote.html"><span class="nav-icon">📥</span><span class="nav-label" data-i18n="nav_import">报价导入</span></a>
+    <a class="nav-item" href="ams_renewal.html"><span class="nav-icon">🔄</span><span class="nav-label" data-i18n="nav_renewal">续保对比</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_records">记录</div>
+    <a class="nav-item" href="ams_changes.html"><span class="nav-icon">📝</span><span class="nav-label" data-i18n="nav_changes">变更记录</span></a>
+    <a class="nav-item" href="ams_reports.html"><span class="nav-icon">📊</span><span class="nav-label" data-i18n="nav_reports">报表</span></a>
+  </nav>
+  <div class="sidebar-footer"><div class="version-badge">v1.4</div></div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="topbar">
+    <div class="page-title" data-i18n="page_quotes">新客户 <span>保险报价</span></div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="resetPage()" data-i18n="btn_reset">🗑 重置</button>
+      <button class="btn btn-ghost btn-sm" onclick="window.print()" data-i18n="btn_print">🖨 打印</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- Client Input -->
+    <div class="client-input-card">
+      <div class="client-input-title" data-i18n="quote_client_info">👤 客户信息</div>
+      <div class="client-input-grid">
+        <div class="ci-group suggest-wrap">
+          <label class="ci-label" data-i18n="quote_client_name">客户姓名 <span style="color:var(--red)">*</span></label>
+          <input class="ci-input" id="q-name" placeholder="输入姓名自动联想" autocomplete="off" oninput="onNameInput()" data-i18n-placeholder="quote_name_hint">
+          <div class="suggest-list" id="suggest-list"></div>
+        </div>
+        <div class="ci-group">
+          <label class="ci-label" data-i18n="label_phone">电话</label>
+          <input class="ci-input" id="q-phone" placeholder="416-xxx-xxxx">
+        </div>
+        <div class="ci-group">
+          <label class="ci-label" data-i18n="label_email">邮箱</label>
+          <input class="ci-input" id="q-email" placeholder="email@example.com">
+        </div>
+        <div class="ci-group">
+          <label class="ci-label" data-i18n="quote_client_code">客户编码（已有客户）</label>
+          <input class="ci-input" id="q-code" placeholder="如 ABCD01" style="font-family:'JetBrains Mono',monospace;font-size:13px" data-i18n-placeholder="quote_code_hint">
+        </div>
+      </div>
+    </div>
+
+    <!-- History Quotes (shown when a client is selected) -->
+    <div class="history-card" id="history-card" style="display:none">
+      <div class="history-header">
+        <div class="history-title" data-i18n="quote_history_title">📋 历史报价 <span class="history-count" id="history-count">0</span></div>
+      </div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+    <!-- Policy Type Tabs -->
+    <div class="policy-tabs">
+      <button class="tab-btn active" onclick="switchTab('auto',this)">🚗 车险 Auto</button>
+      <button class="tab-btn" onclick="switchTab('home',this)">🏠 家财险 Home</button>
+    </div>
+
+    <!-- AUTO panel -->
+    <div class="policy-panel active" id="panel-auto">
+      <!-- Current Insurance (optional) -->
+      <div class="current-ins-card">
+        <div class="current-ins-header">
+          <div class="current-ins-title">当前保险信息（可选）</div>
+          <label style="font-size:12px;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="auto-has-current" onchange="toggleCurrentIns('auto')" style="accent-color:var(--amber)">
+            有现有保险
+          </label>
+        </div>
+        <div id="auto-current-fields" style="display:none">
+          <div class="current-ins-grid">
+            <div class="ci-group">
+              <label class="ci-label">当前保险公司</label>
+              <input class="ci-input" id="auto-cur-insurer" placeholder="如 Intact, Aviva...">
+            </div>
+            <div class="ci-group">
+              <label class="ci-label">当前年保费</label>
+              <input class="ci-input" id="auto-cur-premium" type="number" min="0" step="1" placeholder="0" oninput="onCurrentPremiumChange('auto')">
+            </div>
+            <div class="ci-group">
+              <label class="ci-label">到期日</label>
+              <input class="ci-input" id="auto-cur-expiry" type="date">
+            </div>
+          </div>
+        </div>
+        <div id="auto-current-unknown" class="current-ins-unknown">未提供现有保险信息 — 报价将不显示差额对比</div>
+      </div>
+
+      <div class="summary-banner">
+        <div class="sb-left">
+          <div class="sb-headline" id="auto-headline">添加报价方案，为客户寻找最优价格</div>
+          <div class="sb-sub">年付 × 1.013 ÷ 12 = 月付 &nbsp;·&nbsp; 绿色卡片 = 最低报价</div>
+        </div>
+        <div class="sb-right">
+          <div class="sb-saving" id="auto-best">—</div>
+          <div style="font-size:10px;color:var(--text-2);margin-top:1px">最低报价 / 年</div>
+        </div>
+      </div>
+
+      <div class="quotes-grid" id="auto-grid"></div>
+
+      <div class="decision-bar" id="auto-decision-bar">
+        <div class="decision-bar-left">
+          <span style="font-size:18px">📋</span>
+          <div>
+            <div class="decision-bar-hint">选择方案后确认报价结果</div>
+            <div class="decision-bar-selection" id="auto-selected-label">请先添加并选择一个报价方案</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-save" onclick="saveQuoteData()">💾 保存</button>
+          <button class="btn btn-green" id="auto-confirm-btn" disabled onclick="openConfirmModal('auto')">✓ 客户确认投保</button>
+          <button class="btn btn-danger" onclick="openDeclineModal('auto')">✕ 暂不购买</button>
+        </div>
+      </div>
+
+      <div class="notes-card">
+        <div class="notes-title">备注 Broker Notes</div>
+        <textarea class="notes-area" id="auto-notes" placeholder="Broker 备注..."></textarea>
+      </div>
+    </div>
+
+    <!-- HOME panel -->
+    <div class="policy-panel" id="panel-home" style="display:none">
+      <div class="current-ins-card">
+        <div class="current-ins-header">
+          <div class="current-ins-title">当前保险信息（可选）</div>
+          <label style="font-size:12px;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="home-has-current" onchange="toggleCurrentIns('home')" style="accent-color:var(--amber)">
+            有现有保险
+          </label>
+        </div>
+        <div id="home-current-fields" style="display:none">
+          <div class="current-ins-grid">
+            <div class="ci-group">
+              <label class="ci-label">当前保险公司</label>
+              <input class="ci-input" id="home-cur-insurer" placeholder="如 Intact, Aviva...">
+            </div>
+            <div class="ci-group">
+              <label class="ci-label">当前年保费</label>
+              <input class="ci-input" id="home-cur-premium" type="number" min="0" step="1" placeholder="0" oninput="onCurrentPremiumChange('home')">
+            </div>
+            <div class="ci-group">
+              <label class="ci-label">到期日</label>
+              <input class="ci-input" id="home-cur-expiry" type="date">
+            </div>
+          </div>
+        </div>
+        <div id="home-current-unknown" class="current-ins-unknown">未提供现有保险信息 — 报价将不显示差额对比</div>
+      </div>
+
+      <div class="summary-banner">
+        <div class="sb-left">
+          <div class="sb-headline" id="home-headline">添加报价方案，为客户寻找最优价格</div>
+          <div class="sb-sub">家财险含税 8% + 月付手续费 3%</div>
+        </div>
+        <div class="sb-right">
+          <div class="sb-saving" id="home-best">—</div>
+          <div style="font-size:10px;color:var(--text-2);margin-top:1px">最低报价 / 年</div>
+        </div>
+      </div>
+
+      <div class="quotes-grid" id="home-grid"></div>
+
+      <div class="decision-bar" id="home-decision-bar">
+        <div class="decision-bar-left">
+          <span style="font-size:18px">📋</span>
+          <div>
+            <div class="decision-bar-hint">选择方案后确认报价结果</div>
+            <div class="decision-bar-selection" id="home-selected-label">请先添加并选择一个报价方案</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-save" onclick="saveQuoteData()">💾 保存</button>
+          <button class="btn btn-green" id="home-confirm-btn" disabled onclick="openConfirmModal('home')">✓ 客户确认投保</button>
+          <button class="btn btn-danger" onclick="openDeclineModal('home')">✕ 暂不购买</button>
+        </div>
+      </div>
+
+      <div class="notes-card">
+        <div class="notes-title">备注 Broker Notes</div>
+        <textarea class="notes-area" id="home-notes" placeholder="Broker 备注..."></textarea>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">✓ 确认投保</div>
+      <button class="modal-close" onclick="safeCloseModal('confirm-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-summary">
+        <div class="modal-sum-row"><span class="modal-sum-label">客户</span><span class="modal-sum-val" id="cf-client">—</span></div>
+        <div class="modal-sum-row"><span class="modal-sum-label">险种</span><span class="modal-sum-val" id="cf-type">—</span></div>
+        <div class="modal-sum-row"><span class="modal-sum-label">保险公司</span><span class="modal-sum-val highlight" id="cf-insurer">—</span></div>
+        <div class="modal-sum-row"><span class="modal-sum-label">年保费</span><span class="modal-sum-val" id="cf-premium">—</span></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">付款方式</div>
+        <div class="radio-group">
+          <label class="radio-option selected" id="cf-radio-annual" onclick="selectCfPayType('annual')">
+            <input type="radio" name="cf-pay" value="annual" checked>
+            <div><div class="radio-label">年付 Annual</div></div>
+          </label>
+          <label class="radio-option" id="cf-radio-monthly" onclick="selectCfPayType('monthly')">
+            <input type="radio" name="cf-pay" value="monthly">
+            <div><div class="radio-label">月付 Monthly</div></div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">后续任务预览</div>
+        <div class="task-steps">
+          <div class="task-step"><span style="font-size:16px">📄</span><span class="task-step-num">1. 出单</span><span class="task-step-desc">保险公司出单</span></div>
+          <div class="task-step"><span style="font-size:16px">✍️</span><span class="task-step-num">2. 签字</span><span class="task-step-desc">客户签署保单文件</span></div>
+          <div class="task-step"><span style="font-size:16px">💻</span><span class="task-step-num">3. 录单</span><span class="task-step-desc">系统录入保单信息</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseModal('confirm-modal')">取消</button>
+      <button class="btn btn-green" id="cf-submit-btn" onclick="submitConfirm()">确认投保 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Decline Modal -->
+<div class="modal-overlay" id="decline-modal">
+  <div class="modal-box" style="width:440px">
+    <div class="modal-header">
+      <div class="modal-title">暂不购买</div>
+      <button class="modal-close" onclick="safeCloseModal('decline-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:#374151;line-height:1.6;margin-bottom:16px">
+        报价信息将被保存。下次为该客户报价时，输入姓名即可自动联想历史报价数据。
+      </p>
+      <div class="form-group">
+        <label class="form-label">备注原因（选填）</label>
+        <textarea class="form-input" id="decline-reason" rows="3" placeholder="如：客户觉得价格偏高 / 需要再考虑 / 已在其他公司投保..." style="resize:vertical;min-height:60px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseModal('decline-modal')">取消</button>
+      <button class="btn btn-primary" id="decline-submit-btn" onclick="submitDecline()">保存报价记录</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Constants ──
+const INSURERS = ['Intact','Aviva','Wawanesa','Economical','CAA','Gore Mutual','Pembridge','Pafco','Facility','Travelers','RSA','Others'];
+const LIABILITIES = ['$1,000,000','$2,000,000'];
+const DEDUCTIBLES = ['$500 (All Perils)','$1,000 (All Perils)','$500 (Collision) / $500 (Comprehensive)','$1,000 (Collision) / $500 (Comprehensive)'];
+const HOME_TYPES = ['租客险 Tenant','房主险 Homeowner','公寓险 Condo','出租公寓险 Rental'];
+const FIRE_DEDS = ['$500','$1,000','$1,500','$2,000','$2,500'];
+const WATER_DEDS = ['$1,000','$2,000','$5,000','$10,000','$15,000','$25,000'];
+const TYPE_EMOJI = { auto:'🚗', home:'🏠' };
+const TYPE_LABEL = { auto:'车险 Auto', home:'家财险 Home' };
+
+let db = null;
+let cardCount = { auto: 0, home: 0 };
+let SELECTED = { auto: null, home: null };
+let BASE = { auto: 0, home: 0 };    // current insurance premium (0 = unknown)
+let activeTab = 'auto';
+let cfPayType = 'annual';
+let cfModalType = null;
+let declineModalType = null;
+let currentClientCode = null;        // set when selecting existing client
+let editingQuoteId = null;           // set when restoring a previous quote
+let suggestTimer = null;
+
+// ── Auto-connect ──
+async function autoConnect() {
+  const creds = await window.AMSBootstrap.getCredentials();
+  if (creds?.url && creds?.key) {
+    db = window.supabase.createClient(creds.url, creds.key);
+    window.AMSBootstrap.storeCredentials(creds.url, creds.key);
+    document.getElementById('config-screen').style.display = 'none';
+  }
+}
+function connectDB() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { showToast('请填写所有字段', 'error'); return; }
+  db = window.supabase.createClient(url, key);
+  window.AMSBootstrap.storeCredentials(url, key);
+  document.getElementById('config-screen').style.display = 'none';
+  showToast('已连接 ✓');
+}
+
+// ── Tab ──
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.policy-panel').forEach(p => p.style.display = 'none');
+  btn.classList.add('active');
+  document.getElementById('panel-' + tab).style.display = '';
+}
+
+// ── Current insurance toggle ──
+function toggleCurrentIns(type) {
+  const checked = document.getElementById(`${type}-has-current`).checked;
+  document.getElementById(`${type}-current-fields`).style.display  = checked ? '' : 'none';
+  document.getElementById(`${type}-current-unknown`).style.display = checked ? 'none' : '';
+  if (!checked) { BASE[type] = 0; refreshSummary(type); }
+}
+function onCurrentPremiumChange(type) {
+  const v = parseFloat(document.getElementById(`${type}-cur-premium`)?.value) || 0;
+  BASE[type] = v;
+  // Refresh all cards diff pills
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`${type}-annual-${i}`);
+    if (el) onAnnualChange(type, i);
+  }
+  refreshSummary(type);
+}
+
+// ── Name auto-suggest ──
+function onNameInput() {
+  clearTimeout(suggestTimer);
+  const val = document.getElementById('q-name').value.trim();
+  if (val.length < 1) { closeSuggest(); return; }
+  suggestTimer = setTimeout(() => searchSuggestions(val), 300);
+}
+
+async function searchSuggestions(query) {
+  if (!db) return;
+  const list = document.getElementById('suggest-list');
+  let html = '';
+
+  try {
+    // Search existing clients
+    const { data: clients } = await db.from('clients')
+      .select('customer_code, full_name, phone, email')
+      .ilike('full_name', `%${query}%`)
+      .limit(5);
+
+    if (clients?.length) {
+      html += '<div class="suggest-section">已有客户</div>';
+      clients.forEach(c => {
+        html += `<div class="suggest-item" onclick="selectSuggestClient('${esc(c.customer_code)}','${esc(c.full_name)}','${esc(c.phone||'')}','${esc(c.email||'')}')">
+          <span class="suggest-badge badge-client">客户</span>
+          <div><div class="suggest-name">${esc(c.full_name)}</div><div class="suggest-meta">${esc(c.customer_code)} · ${esc(c.phone||'')}</div></div>
+        </div>`;
+      });
+    }
+
+    // Search previous quotes
+    const { data: quotes } = await db.from('quotes')
+      .select('id, client_name, client_phone, client_email, customer_code, policy_type, status, current_insurer, current_premium, quote_data, notes, created_at')
+      .ilike('client_name', `%${query}%`)
+      .order('created_at', { ascending: false })
+      .limit(8);
+
+    if (quotes?.length) {
+      html += '<div class="suggest-section">历史报价</div>';
+      quotes.forEach(q => {
+        const date = q.created_at ? q.created_at.split('T')[0] : '';
+        const statusLabel = q.status === 'confirmed' ? '已成交' : q.status === 'declined' ? '未成交' : '进行中';
+        const statusClass = q.status === 'confirmed' ? 'badge-client' : q.status === 'declined' ? 'badge-declined' : 'badge-quote';
+        html += `<div class="suggest-item" onclick="selectSuggestQuote('${q.id}')">
+          <span class="suggest-badge ${statusClass}">${statusLabel}</span>
+          <div>
+            <div class="suggest-name">${esc(q.client_name)}</div>
+            <div class="suggest-meta">${date} · ${TYPE_LABEL[q.policy_type]||q.policy_type} · ${esc(q.current_insurer||'无现有保险')}</div>
+          </div>
+        </div>`;
+      });
+    }
+
+    if (!html) {
+      html = '<div class="suggest-item" style="color:#94a3b8;font-size:13px">未找到匹配记录 — 将作为新客户报价</div>';
+    }
+  } catch(e) {
+    html = '<div class="suggest-item" style="color:var(--red);font-size:13px">搜索失败</div>';
+  }
+
+  list.innerHTML = html;
+  list.classList.add('open');
+}
+
+function closeSuggest() {
+  document.getElementById('suggest-list').classList.remove('open');
+}
+
+// Click outside to close suggest
+document.addEventListener('click', e => {
+  if (!e.target.closest('.suggest-wrap')) closeSuggest();
+});
+
+function selectSuggestClient(code, name, phone, email) {
+  currentClientCode = code;
+  document.getElementById('q-name').value = name;
+  document.getElementById('q-phone').value = phone;
+  document.getElementById('q-email').value = email;
+  document.getElementById('q-code').value = code;
+  closeSuggest();
+  showToast(`已选择客户：${name} (${code})`);
+  loadClientQuoteHistory(code, name);
+}
+
+async function selectSuggestQuote(quoteId) {
+  closeSuggest();
+  if (!db) return;
+  try {
+    const { data: q, error } = await db.from('quotes').select('*').eq('id', quoteId).single();
+    if (error) throw error;
+    restoreFromQuote(q);
+  } catch(e) {
+    showToast('加载报价失败：' + e.message, 'error');
+  }
+}
+
+function restoreFromQuote(q) {
+  editingQuoteId = q.id;
+  currentClientCode = q.customer_code || null;
+
+  // Fill client info
+  document.getElementById('q-name').value  = q.client_name || '';
+  document.getElementById('q-phone').value = q.client_phone || '';
+  document.getElementById('q-email').value = q.client_email || '';
+  document.getElementById('q-code').value  = q.customer_code || '';
+
+  // Switch to correct tab
+  const type = q.policy_type || 'auto';
+  const tabBtn = document.querySelector(`.tab-btn:nth-child(${type === 'home' ? 2 : 1})`);
+  if (tabBtn) switchTab(type, tabBtn);
+
+  // Current insurance
+  if (q.current_insurer || q.current_premium) {
+    document.getElementById(`${type}-has-current`).checked = true;
+    toggleCurrentIns(type);
+    document.getElementById(`${type}-cur-insurer`).value = q.current_insurer || '';
+    document.getElementById(`${type}-cur-premium`).value = q.current_premium || '';
+    BASE[type] = parseFloat(q.current_premium) || 0;
+  }
+
+  // Restore quote cards from quote_data
+  const data = q.quote_data || {};
+  if (data.cards?.length) {
+    data.cards.forEach(card => {
+      addQuote(type);
+      const i = card.i;
+      const pid = `${type}-d${i}`;
+      const insEl = document.getElementById(`${type}-ins-${i}`);
+      if (insEl && card.insurer) insEl.value = card.insurer;
+      const perEl = document.getElementById(`${type}-period-${i}`);
+      if (perEl && card.period) perEl.value = card.period;
+      const aEl = document.getElementById(`${type}-annual-${i}`);
+      if (aEl && card.annual) { aEl.value = card.annual; onAnnualChange(type, i); }
+      const adEl = document.getElementById(`${pid}-addr`);
+      if (adEl && card.addr) adEl.value = card.addr;
+      if (type === 'auto') {
+        if (card.liab) { const el = document.getElementById(`${pid}-liab`); if (el) el.value = card.liab; }
+        if (card.ded)  { const el = document.getElementById(`${pid}-ded`);  if (el) el.value = card.ded; }
+        ['newcar','app'].forEach(f => {
+          const btn = document.getElementById(`${pid}-${f}`);
+          if (btn && card[f]) { btn.classList.replace('t-no','t-yes'); btn.textContent = '✓ 有'; }
+        });
+      } else {
+        if (card.ptype) { const el = document.getElementById(`${pid}-ptype`); if (el) { el.value = card.ptype; onHomePTypeChange(pid); } }
+        if (card.coverage) { const el = document.getElementById(`${pid}-coverage`); if (el) el.value = card.coverage; }
+        if (card.fireded) { const el = document.getElementById(`${pid}-fireded`); if (el) el.value = card.fireded; }
+        const wBtn = document.getElementById(`${pid}-water`);
+        if (wBtn && card.water) {
+          wBtn.classList.replace('t-no','t-yes'); wBtn.textContent = '✓ 有';
+          const wdRow = document.getElementById(`${pid}-wded-row`); if (wdRow) wdRow.style.display = '';
+        }
+        if (card.waterded) { const el = document.getElementById(`${pid}-waterded`); if (el) el.value = card.waterded; }
+      }
+    });
+    if (data.selected) selectCard(type, data.selected);
+  }
+
+  // Notes
+  if (data.notes) document.getElementById(`${type}-notes`).value = data.notes;
+
+  showToast('已载入历史报价数据', 'success');
+  loadClientQuoteHistory(q.customer_code, q.client_name);
+}
+
+async function loadClientQuoteHistory(code, name) {
+  if (!db) return;
+  try {
+    let query = db.from('quotes').select('id, client_name, policy_type, status, current_insurer, created_at, quote_data').order('created_at', { ascending: false }).limit(10);
+    if (code) query = query.eq('customer_code', code);
+    else if (name) query = query.ilike('client_name', name);
+    else return;
+
+    const { data: quotes } = await query;
+    const card = document.getElementById('history-card');
+    const list = document.getElementById('history-list');
+    if (!quotes?.length) { card.style.display = 'none'; return; }
+
+    card.style.display = '';
+    document.getElementById('history-count').textContent = quotes.length;
+    list.innerHTML = quotes.map(q => {
+      const date = q.created_at ? q.created_at.split('T')[0] : '';
+      const statusLabel = q.status === 'confirmed' ? '已成交' : q.status === 'declined' ? '未成交' : '进行中';
+      const statusClass = q.status === 'confirmed' ? 'hs-confirmed' : q.status === 'declined' ? 'hs-declined' : 'hs-pending';
+      const cards = q.quote_data?.cards || [];
+      const bestPrice = cards.reduce((min, c) => { const v = parseFloat(c.annual)||0; return v > 0 && v < min ? v : min; }, Infinity);
+      const priceStr = bestPrice < Infinity ? fmtMoney(bestPrice) : '—';
+      return `<div class="history-row" onclick="selectSuggestQuote('${q.id}')">
+        <span class="history-date">${date}</span>
+        <span class="history-type-icon">${TYPE_EMOJI[q.policy_type]||'📄'}</span>
+        <div class="history-info">
+          <div class="history-info-name">${esc(q.current_insurer||'新投保')} → 最低 ${priceStr}</div>
+          <div class="history-info-detail">${cards.length}个方案</div>
+        </div>
+        <span class="history-status ${statusClass}">${statusLabel}</span>
+      </div>`;
+    }).join('');
+  } catch(e) { console.warn('history load failed', e); }
+}
+
+// ── Grid init ──
+function initGrids() {
+  ['auto','home'].forEach(type => {
+    const grid = document.getElementById(`${type}-grid`);
+    grid.innerHTML = '';
+    grid.appendChild(buildAddCard(type));
+  });
+}
+
+// ── Calculations ──
+function calcMonthly(annual, type, insurer) {
+  if (!annual || annual <= 0) return '—';
+  let monthly;
+  if (type === 'home') {
+    monthly = annual * (1 + 0.03 + 0.08) / 12;
+  } else {
+    const feeRate = (insurer || '').toLowerCase().includes('intact') ? 0.012 : 0.013;
+    monthly = annual * (1 + feeRate) / 12;
+  }
+  return '$' + monthly.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+function fmtMoney(n) { return '$' + Number(n).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+
+// ── Add quote card ──
+function addQuote(type) {
+  cardCount[type]++;
+  const idx = cardCount[type];
+  if (idx > 3) { cardCount[type]--; showToast('最多添加3个报价方案', 'error'); return; }
+
+  const badgeText = `◆ 报价方案 ${idx}`;
+  const pid = `${type}-d${idx}`;
+  const insurerOpts = INSURERS.map(n => `<option>${n}</option>`).join('');
+  const liabOpts = LIABILITIES.map(v => `<option value="${v}">${v}</option>`).join('');
+  const dedOpts = DEDUCTIBLES.map(v => `<option value="${v}">${v}</option>`).join('');
+  const fireDedOpts = FIRE_DEDS.map(v => `<option value="${v}">${v}</option>`).join('');
+  const waterDedOpts = WATER_DEDS.map(v => `<option value="${v}">${v}</option>`).join('');
+  const homeTypeOpts = HOME_TYPES.map(v => `<option value="${v}">${v}</option>`).join('');
+
+  const autoDetails = `
+    <div class="detail-row"><span class="detail-lbl">地址</span><div class="detail-val"><input class="detail-input" id="${pid}-addr" placeholder="填写地址"></div></div>
+    <div class="detail-row"><span class="detail-lbl">责任险</span><div class="detail-val"><select class="detail-select" id="${pid}-liab">${liabOpts}</select></div></div>
+    <div class="detail-row"><span class="detail-lbl">起赔额</span><div class="detail-val"><select class="detail-select" id="${pid}-ded">${dedOpts}</select></div></div>
+    <div class="detail-row"><span class="detail-lbl">新车险</span><div class="detail-val"><button class="toggle-btn t-no" id="${pid}-newcar" onclick="toggleYN(this)">✕ 无</button></div></div>
+    <div class="detail-row"><span class="detail-lbl">APP 折扣</span><div class="detail-val"><button class="toggle-btn t-no" id="${pid}-app" onclick="toggleYN(this)">✕ 无</button></div></div>`;
+
+  const homeDetails = `
+    <div class="detail-row"><span class="detail-lbl">地址</span><div class="detail-val"><input class="detail-input" id="${pid}-addr" placeholder="填写地址"></div></div>
+    <div class="detail-row"><span class="detail-lbl">险种类型</span><div class="detail-val"><select class="detail-select" id="${pid}-ptype" onchange="onHomePTypeChange('${pid}')">${homeTypeOpts}</select></div></div>
+    <div class="detail-row"><span class="detail-lbl" id="${pid}-cov-lbl">个人财物总额</span><div class="detail-val"><div style="display:flex;align-items:baseline;gap:2px;justify-content:flex-end"><span style="font-size:11px;color:#94a3b8">$</span><input class="detail-input" id="${pid}-coverage" placeholder="0" style="width:80px;text-align:right"></div></div></div>
+    <div class="detail-row"><span class="detail-lbl">火险起赔额</span><div class="detail-val"><select class="detail-select" id="${pid}-fireded">${fireDedOpts}</select></div></div>
+    <div class="detail-row"><span class="detail-lbl">水险</span><div class="detail-val"><button class="toggle-btn t-no" id="${pid}-water" onclick="toggleWater(this,'${pid}')">✕ 无</button></div></div>
+    <div class="detail-row" id="${pid}-wded-row" style="display:none"><span class="detail-lbl" style="padding-left:10px;color:#94a3b8">└ 水险起赔额</span><div class="detail-val"><select class="detail-select" id="${pid}-waterded">${waterDedOpts}</select></div></div>`;
+
+  const div = document.createElement('div');
+  div.className = 'quote-card';
+  div.id = `${type}-card-${idx}`;
+  div.innerHTML = `
+    <button class="remove-btn" onclick="removeQuote('${type}',${idx})" title="删除">×</button>
+    <div class="qc-header">
+      <div class="qc-badge badge-quote-new">${badgeText}</div>
+      <div class="qc-insurer"><select id="${type}-ins-${idx}">${insurerOpts}</select></div>
+      <div class="qc-period"><input id="${type}-period-${idx}" value="${nextYearRange()}" placeholder="保单周期"></div>
+    </div>
+    <div class="qc-price" id="${type}-price-${idx}">
+      <div class="price-row">
+        <span class="price-label">年付</span>
+        <div class="price-input-wrap">
+          <span class="price-currency">$</span>
+          <input class="price-input" id="${type}-annual-${idx}" type="number" min="0" step="1" placeholder="0" oninput="onAnnualChange('${type}',${idx})">
+        </div>
+      </div>
+      <div class="price-row" style="margin-top:4px">
+        <span class="price-label">月付</span>
+        <span class="monthly-val" id="${type}-monthly-${idx}">—</span>
+      </div>
+      <div class="diff-pill diff-empty" id="${type}-diff-${idx}"></div>
+    </div>
+    <div class="qc-details">
+      <div class="qc-detail-title">保障详情</div>
+      ${type === 'auto' ? autoDetails : homeDetails}
+    </div>
+    <div style="padding:0 16px 14px">
+      <button class="select-card-btn" id="${type}-selbtn-${idx}" onclick="selectCard('${type}',${idx})">
+        ☐ 选择此方案
+      </button>
+    </div>`;
+
+  const grid = document.getElementById(`${type}-grid`);
+  const addBtn = document.getElementById(`${type}-add-card`);
+  grid.insertBefore(div, addBtn);
+
+  div.style.opacity = '0'; div.style.transform = 'translateY(8px)';
+  requestAnimationFrame(() => {
+    div.style.transition = 'opacity .22s,transform .22s';
+    div.style.opacity = '1'; div.style.transform = 'none';
+  });
+  if (idx >= 3 && addBtn) addBtn.style.display = 'none';
+}
+
+function removeQuote(type, idx) {
+  const card = document.getElementById(`${type}-card-${idx}`);
+  if (card) {
+    card.style.transition = 'all .18s';
+    card.style.opacity = '0'; card.style.transform = 'scale(.96)';
+    setTimeout(() => card.remove(), 200);
+  }
+  if (SELECTED[type] === idx) { SELECTED[type] = null; updateDecisionBar(type); }
+  document.getElementById(`${type}-add-card`).style.display = '';
+  setTimeout(() => refreshSummary(type), 250);
+}
+
+function selectCard(type, idx) {
+  for (let i = 1; i <= 3; i++) {
+    const c = document.getElementById(`${type}-card-${i}`);
+    if (c) {
+      c.classList.remove('selected-card');
+      const btn = document.getElementById(`${type}-selbtn-${i}`);
+      if (btn) { btn.textContent = '☐ 选择此方案'; btn.classList.remove('is-selected'); }
+      c.querySelectorAll('.selected-ribbon').forEach(r => r.remove());
+    }
+  }
+  SELECTED[type] = idx;
+  const card = document.getElementById(`${type}-card-${idx}`);
+  if (card) {
+    card.classList.add('selected-card');
+    const btn = document.getElementById(`${type}-selbtn-${idx}`);
+    if (btn) { btn.textContent = '✓ 已选择此方案'; btn.classList.add('is-selected'); }
+    const ribbon = document.createElement('div');
+    ribbon.className = 'selected-ribbon'; ribbon.textContent = '✓ 已选择';
+    card.appendChild(ribbon);
+  }
+  updateDecisionBar(type);
+}
+
+function updateDecisionBar(type) {
+  const idx = SELECTED[type];
+  const lbl = document.getElementById(`${type}-selected-label`);
+  const btn = document.getElementById(`${type}-confirm-btn`);
+  const bar = document.getElementById(`${type}-decision-bar`);
+  if (!idx) {
+    lbl.textContent = '请先添加并选择一个报价方案';
+    btn.disabled = true; bar.classList.remove('ready');
+    return;
+  }
+  const ins = document.getElementById(`${type}-ins-${idx}`)?.value || 'δ֪';
+  const annual = parseFloat(document.getElementById(`${type}-annual-${idx}`)?.value) || 0;
+  if (!annual) {
+    lbl.textContent = `已选 ${ins} — 请先输入年保费`;
+    btn.disabled = true; bar.classList.remove('ready');
+    return;
+  }
+  lbl.textContent = `已选：${ins} · 年付 ${fmtMoney(annual)} · 月付 ${calcMonthly(annual, type, ins)}`;
+  btn.disabled = false; bar.classList.add('ready');
+}
+
+function onAnnualChange(type, idx) {
+  const annual = parseFloat(document.getElementById(`${type}-annual-${idx}`)?.value) || 0;
+  const base = BASE[type];
+  const mEl = document.getElementById(`${type}-monthly-${idx}`);
+  const dEl = document.getElementById(`${type}-diff-${idx}`);
+  const card = document.getElementById(`${type}-card-${idx}`);
+  const ins = document.getElementById(`${type}-ins-${idx}`)?.value || '';
+  if (mEl) mEl.textContent = annual > 0 ? calcMonthly(annual, type, ins) : '—';
+  if (dEl && card) {
+    if (!annual || !base) { dEl.className = 'diff-pill diff-empty'; card.classList.remove('best-card','warn-card'); }
+    else {
+      const diff = base - annual;
+      if (diff > 0)      { dEl.className='diff-pill diff-save'; dEl.textContent='ʡ '+fmtMoney(diff)+' /年'; card.className='quote-card best-card'; }
+      else if (diff < 0) { dEl.className='diff-pill diff-more'; dEl.textContent='贵 '+fmtMoney(Math.abs(diff))+' /年'; card.className='quote-card warn-card'; }
+      else               { dEl.className='diff-pill diff-base'; dEl.textContent='持平'; card.className='quote-card'; }
+    }
+  }
+  if (SELECTED[type] === idx) updateDecisionBar(type);
+  refreshSummary(type);
+}
+
+function refreshSummary(type) {
+  document.querySelectorAll(`#${type}-grid .best-ribbon`).forEach(r => r.remove());
+  const annuals = [];
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`${type}-annual-${i}`);
+    if (el) { const v = parseFloat(el.value)||0; if (v > 0) annuals.push({i, v}); }
+  }
+  const bestEl = document.getElementById(`${type}-best`);
+  const hdEl = document.getElementById(`${type}-headline`);
+  if (!annuals.length) {
+    bestEl.textContent = '—';
+    hdEl.textContent = '添加报价方案，为客户寻找最优价格'; return;
+  }
+  const best = annuals.reduce((a, b) => a.v < b.v ? a : b);
+  const ins = document.getElementById(`${type}-ins-${best.i}`)?.value || '';
+  bestEl.textContent = fmtMoney(best.v);
+  hdEl.textContent = `最优：${ins} ${fmtMoney(best.v)}/年`;
+
+  if (BASE[type] > 0) {
+    const saved = BASE[type] - best.v;
+    if (saved > 0) hdEl.textContent += `，较现有节省 ${fmtMoney(saved)}`;
+    else if (saved < 0) hdEl.textContent += `，较现有贵 ${fmtMoney(Math.abs(saved))}`;
+  }
+
+  const ribbon = document.createElement('div');
+  ribbon.className = 'best-ribbon'; ribbon.textContent = '✓ 最低';
+  document.getElementById(`${type}-card-${best.i}`)?.appendChild(ribbon);
+}
+
+// ── Toggle helpers ──
+function toggleYN(btn) {
+  if (btn.classList.contains('t-yes')) { btn.classList.replace('t-yes','t-no'); btn.textContent = '✕ 无'; }
+  else { btn.classList.replace('t-no','t-yes'); btn.textContent = '✓ 有'; }
+}
+function toggleWater(btn, pid) {
+  if (btn.classList.contains('t-yes')) {
+    btn.classList.replace('t-yes','t-no'); btn.textContent = '✕ 无';
+    document.getElementById(`${pid}-wded-row`).style.display = 'none';
+  } else {
+    btn.classList.replace('t-no','t-yes'); btn.textContent = '✓ 有';
+    document.getElementById(`${pid}-wded-row`).style.display = '';
+  }
+}
+function onHomePTypeChange(pid) {
+  const val = document.getElementById(`${pid}-ptype`)?.value || '';
+  const lbl = document.getElementById(`${pid}-cov-lbl`);
+  if (lbl) lbl.textContent = (val.startsWith('租客险') || val.startsWith('出租公寓险')) ? '个人财物总额' : '房屋重建费';
+}
+
+// ── Save / Load quote data to localStorage ──
+function saveQuoteData() {
+  const snapshot = {
+    client: {
+      name:  document.getElementById('q-name')?.value || '',
+      phone: document.getElementById('q-phone')?.value || '',
+      email: document.getElementById('q-email')?.value || '',
+      code:  document.getElementById('q-code')?.value || '',
+    },
+    auto: gatherQuoteData('auto'),
+    home: gatherQuoteData('home'),
+    autoBase: { ...BASE.auto !== undefined ? { premium: BASE.auto } : {} },
+    homeBase: { ...BASE.home !== undefined ? { premium: BASE.home } : {} },
+    curInsAuto: document.getElementById('auto-cur-insurer')?.value || '',
+    curPremAuto: document.getElementById('auto-cur-premium')?.value || '',
+    curInsHome: document.getElementById('home-cur-insurer')?.value || '',
+    curPremHome: document.getElementById('home-cur-premium')?.value || '',
+    timestamp: new Date().toISOString(),
+  };
+  localStorage.setItem('ams_quotes_draft', JSON.stringify(snapshot));
+  showToast('已保存 ✓');
+}
+
+function loadQuoteDraft() {
+  try {
+    const raw = localStorage.getItem('ams_quotes_draft');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.client) {
+      if (d.client.name)  document.getElementById('q-name').value  = d.client.name;
+      if (d.client.phone) document.getElementById('q-phone').value = d.client.phone;
+      if (d.client.email) document.getElementById('q-email').value = d.client.email;
+      if (d.client.code)  document.getElementById('q-code').value  = d.client.code;
+    }
+    if (d.curInsAuto)  { const el = document.getElementById('auto-cur-insurer');  if (el) el.value = d.curInsAuto; }
+    if (d.curPremAuto) { const el = document.getElementById('auto-cur-premium'); if (el) el.value = d.curPremAuto; }
+    if (d.curInsHome)  { const el = document.getElementById('home-cur-insurer');  if (el) el.value = d.curInsHome; }
+    if (d.curPremHome) { const el = document.getElementById('home-cur-premium'); if (el) el.value = d.curPremHome; }
+    // Restore card data
+    for (const type of ['auto', 'home']) {
+      if (!d[type]?.cards) continue;
+      for (const c of d[type].cards) {
+        const pid = `${type}-d${c.i}`;
+        const el = (id) => document.getElementById(id);
+        if (el(`${type}-ins-${c.i}`))    el(`${type}-ins-${c.i}`).value    = c.insurer || '';
+        if (el(`${type}-period-${c.i}`)) el(`${type}-period-${c.i}`).value = c.period || '';
+        if (el(`${type}-annual-${c.i}`)) el(`${type}-annual-${c.i}`).value = c.annual || '';
+        if (el(`${pid}-addr`)) el(`${pid}-addr`).value = c.addr || '';
+        if (type === 'auto') {
+          if (el(`${pid}-liab`)) el(`${pid}-liab`).value = c.liab || '';
+          if (el(`${pid}-ded`))  el(`${pid}-ded`).value  = c.ded || '';
+        } else {
+          if (el(`${pid}-ptype`))   el(`${pid}-ptype`).value   = c.ptype || '';
+          if (el(`${pid}-coverage`))el(`${pid}-coverage`).value = c.coverage || '';
+          if (el(`${pid}-fireded`)) el(`${pid}-fireded`).value  = c.fireded || '';
+          if (el(`${pid}-waterded`))el(`${pid}-waterded`).value = c.waterded || '';
+        }
+      }
+      if (d[type].notes) {
+        const nEl = document.getElementById(`${type}-notes`);
+        if (nEl) nEl.value = d[type].notes;
+      }
+    }
+    showToast('已恢复上次保存的草稿');
+  } catch(e) { console.warn('loadQuoteDraft:', e); }
+}
+
+// ── Gather all quote data for persistence ──
+function gatherQuoteData(type) {
+  const data = { cards: [], selected: SELECTED[type], notes: document.getElementById(`${type}-notes`)?.value || '' };
+  for (let i = 1; i <= 3; i++) {
+    const aEl = document.getElementById(`${type}-annual-${i}`);
+    if (!aEl) continue;
+    const pid = `${type}-d${i}`;
+    const card = { i, insurer: document.getElementById(`${type}-ins-${i}`)?.value || '',
+                   period: document.getElementById(`${type}-period-${i}`)?.value || '',
+                   annual: aEl.value, addr: document.getElementById(`${pid}-addr`)?.value || '' };
+    if (type === 'auto') {
+      card.liab   = document.getElementById(`${pid}-liab`)?.value   || '';
+      card.ded    = document.getElementById(`${pid}-ded`)?.value    || '';
+      card.newcar = document.getElementById(`${pid}-newcar`)?.classList.contains('t-yes') || false;
+      card.app    = document.getElementById(`${pid}-app`)?.classList.contains('t-yes')    || false;
+    } else {
+      card.ptype   = document.getElementById(`${pid}-ptype`)?.value    || '';
+      card.coverage= document.getElementById(`${pid}-coverage`)?.value || '';
+      card.fireded = document.getElementById(`${pid}-fireded`)?.value  || '';
+      card.water   = document.getElementById(`${pid}-water`)?.classList.contains('t-yes') || false;
+      card.waterded= document.getElementById(`${pid}-waterded`)?.value || '';
+    }
+    data.cards.push(card);
+  }
+  return data;
+}
+
+// ── Confirm Modal ──
+function openConfirmModal(type) {
+  cfModalType = type;
+  const idx = SELECTED[type];
+  if (!idx) return;
+  const name = document.getElementById('q-name').value.trim();
+  if (!name) { showToast('请先填写客户姓名', 'error'); return; }
+
+  const ins = document.getElementById(`${type}-ins-${idx}`)?.value || '—';
+  const annual = parseFloat(document.getElementById(`${type}-annual-${idx}`)?.value) || 0;
+
+  document.getElementById('cf-client').textContent = name + (currentClientCode ? ` (${currentClientCode})` : '');
+  document.getElementById('cf-type').textContent = TYPE_LABEL[type] || type;
+  document.getElementById('cf-insurer').textContent = ins;
+  document.getElementById('cf-premium').textContent = fmtMoney(annual) + '/年';
+
+  selectCfPayType('annual');
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function selectCfPayType(pt) {
+  cfPayType = pt;
+  document.getElementById('cf-radio-annual').classList.toggle('selected', pt === 'annual');
+  document.getElementById('cf-radio-monthly').classList.toggle('selected', pt === 'monthly');
+}
+
+async function submitConfirm() {
+  if (!db) return;
+  const type = cfModalType;
+  const idx = SELECTED[type];
+  if (!idx) return;
+
+  const name    = document.getElementById('q-name').value.trim();
+  const phone   = document.getElementById('q-phone').value.trim();
+  const email   = document.getElementById('q-email').value.trim();
+  const code    = document.getElementById('q-code').value.trim().toUpperCase();
+  const ins     = document.getElementById(`${type}-ins-${idx}`)?.value || '';
+  const annual  = parseFloat(document.getElementById(`${type}-annual-${idx}`)?.value) || 0;
+  const curIns  = document.getElementById(`${type}-cur-insurer`)?.value || null;
+  const curPrem = parseFloat(document.getElementById(`${type}-cur-premium`)?.value) || null;
+
+  if (!name) { showToast('请填写客户姓名', 'error'); return; }
+  if (!annual) { showToast('请确认保费金额', 'error'); return; }
+
+  const btn = document.getElementById('cf-submit-btn');
+  btn.textContent = '处理中…'; btn.disabled = true;
+
+  try {
+    // Determine customer_code — use existing or verify typed code against clients table
+    const CODE_RE = /^([A-Z]{4}[0-9]{2}|[0-9]{6}|[0-9][A-Z]{3}[0-9]{2}|[A-Z]-[A-Z]{2}[0-9]{2})$/;
+    let custCode = currentClientCode || (code && CODE_RE.test(code) ? code : null);
+
+    // If code was manually typed (not from dropdown), verify it exists in clients
+    if (custCode && !currentClientCode) {
+      const { data: clientRow } = await db.from('clients').select('customer_code').eq('customer_code', custCode).maybeSingle();
+      if (!clientRow) {
+        showToast(`客户编号 ${custCode} 不存在，请从下拉列表中选择客户`, 'error');
+        btn.textContent = '确认投保 →'; btn.disabled = false;
+        return;
+      }
+    }
+
+    // 1. Save quote record as 'confirmed'
+    const quotePayload = {
+      customer_code:    custCode,
+      client_name:      name,
+      client_phone:     phone || null,
+      client_email:     email || null,
+      policy_type:      type,
+      current_insurer:  curIns,
+      current_premium:  curPrem,
+      quote_data:       gatherQuoteData(type),
+      status:           'confirmed',
+      notes:            document.getElementById(`${type}-notes`)?.value || null,
+    };
+
+    let quoteId;
+    if (editingQuoteId) {
+      const { data: uq, error: ue } = await db.from('quotes').update(quotePayload).eq('id', editingQuoteId).select('id').single();
+      if (ue) throw ue;
+      quoteId = uq.id;
+    } else {
+      const { data: iq, error: ie } = await db.from('quotes').insert(quotePayload).select('id').single();
+      if (ie) throw ie;
+      quoteId = iq.id;
+    }
+
+    // 2. Create policy if customer has a code
+    let policyId = null;
+    if (custCode) {
+      const now = new Date().toISOString().split('T')[0];
+      const effDate = now;
+      const expDate = addOneYear(effDate);
+      const polPayload = {
+        customer_code:  custCode,
+        policy_number:  `NEW-${Date.now().toString(36).toUpperCase()}`,
+        insurer:        ins,
+        policy_type:    type,
+        effective_date: effDate,
+        expiry_date:    expDate,
+        premium_amount: annual,
+        payment_type:   cfPayType,
+        status:         'active',
+        extra_fields:   {},
+        notes:          `由新客户报价创建（报价ID: ${quoteId}）`,
+      };
+      const { data: pol, error: pe } = await db.from('policies').insert(polPayload).select('id').single();
+      if (pe) throw pe;
+      policyId = pol.id;
+
+      // Update quote with policy link
+      await db.from('quotes').update({ converted_policy_id: policyId }).eq('id', quoteId);
+
+      // Insert premium record
+      await db.from('policy_premiums').insert({
+        policy_id: policyId,
+        effective_date: effDate,
+        expiry_date: expDate,
+        premium_amount: annual,
+        payment_type: cfPayType,
+      }).catch(() => {});
+    }
+
+    // 3. Create workflow tasks (出单→签字→录单)
+    const workflowId = crypto.randomUUID();
+    const now = new Date();
+    const taskBase = {
+      customer_code: custCode || null,
+      policy_id:     policyId,
+      task_type:     'change_workflow',
+      workflow_id:   workflowId,
+      policy_type:   type,
+      description:   `新客户报价确认 — ${ins}，${cfPayType === 'annual' ? '年付' : '月付'} ${fmtMoney(annual)}/年。客户：${name}`,
+    };
+
+    const tasks = [
+      { ...taskBase, title: `[新投保] 出单 — ${ins}（${name}）`, status: 'pending_issue', due_date: addDays(now, 1) },
+      { ...taskBase, title: `[新投保] 签字 — ${ins}（${name}）`, status: 'pending_sign',  due_date: addDays(now, 3) },
+      { ...taskBase, title: `[新投保] 录单 — ${ins}（${name}）`, status: 'pending_entry', due_date: addDays(now, 5) },
+    ];
+
+    const { error: tErr } = await db.from('tasks').insert(tasks);
+    if (tErr) console.warn('创建任务失败:', tErr.message);
+
+    closeModal('confirm-modal');
+    const policyMsg = policyId ? '保单已创建，' : '';
+    showToast(`✓ 报价确认！${policyMsg}已生成出单→签字→录单任务`, 'success');
+    setTimeout(() => {
+      if (confirm('报价已确认。是否跳转到待办任务页查看？')) location.href = 'ams_tasks.html';
+    }, 500);
+  } catch(e) {
+    showToast('确认失败：' + e.message, 'error');
+  } finally {
+    btn.textContent = '确认投保 →'; btn.disabled = false;
+  }
+}
+
+// ── Decline Modal ──
+function openDeclineModal(type) {
+  declineModalType = type;
+  const name = document.getElementById('q-name').value.trim();
+  if (!name) { showToast('请先填写客户姓名', 'error'); return; }
+  document.getElementById('decline-reason').value = '';
+  document.getElementById('decline-modal').classList.add('open');
+}
+
+async function submitDecline() {
+  if (!db) return;
+  const type = declineModalType;
+  const name  = document.getElementById('q-name').value.trim();
+  const phone = document.getElementById('q-phone').value.trim();
+  const email = document.getElementById('q-email').value.trim();
+  const code  = document.getElementById('q-code').value.trim().toUpperCase();
+  const curIns  = document.getElementById(`${type}-cur-insurer`)?.value || null;
+  const curPrem = parseFloat(document.getElementById(`${type}-cur-premium`)?.value) || null;
+  const reason  = document.getElementById('decline-reason').value.trim();
+  const notes   = document.getElementById(`${type}-notes`)?.value || '';
+
+  const CODE_RE = /^([A-Z]{4}[0-9]{2}|[0-9]{6}|[0-9][A-Z]{3}[0-9]{2}|[A-Z]-[A-Z]{2}[0-9]{2})$/;
+  let custCode = currentClientCode || (code && CODE_RE.test(code) ? code : null);
+
+  const btn = document.getElementById('decline-submit-btn');
+  btn.textContent = '保存中…'; btn.disabled = true;
+
+  try {
+    if (custCode && !currentClientCode) {
+      const { data: clientRow } = await db.from('clients').select('customer_code').eq('customer_code', custCode).maybeSingle();
+      if (!clientRow) custCode = null;
+    }
+    const payload = {
+      customer_code:   custCode,
+      client_name:     name,
+      client_phone:    phone || null,
+      client_email:    email || null,
+      policy_type:     type,
+      current_insurer: curIns,
+      current_premium: curPrem,
+      quote_data:      gatherQuoteData(type),
+      status:          'declined',
+      notes:           [notes, reason ? `[未成交原因] ${reason}` : ''].filter(Boolean).join('\n') || null,
+    };
+
+    if (editingQuoteId) {
+      const { error } = await db.from('quotes').update(payload).eq('id', editingQuoteId);
+      if (error) throw error;
+    } else {
+      const { error } = await db.from('quotes').insert(payload);
+      if (error) throw error;
+    }
+
+    closeModal('decline-modal');
+    showToast('报价记录已保存 — 下次输入该客户姓名将自动联想', 'success');
+  } catch(e) {
+    showToast('保存失败：' + e.message, 'error');
+  } finally {
+    btn.textContent = '保存报价记录'; btn.disabled = false;
+  }
+}
+
+// ── Reset page ──
+function resetPage() {
+  if (!confirm('确定要重置所有报价信息吗？')) return;
+  editingQuoteId = null;
+  currentClientCode = null;
+  ['q-name','q-phone','q-email','q-code'].forEach(id => document.getElementById(id).value = '');
+  ['auto','home'].forEach(type => {
+    cardCount[type] = 0;
+    SELECTED[type] = null;
+    BASE[type] = 0;
+    document.getElementById(`${type}-has-current`).checked = false;
+    toggleCurrentIns(type);
+    document.getElementById(`${type}-cur-insurer`).value = '';
+    document.getElementById(`${type}-cur-premium`).value = '';
+    document.getElementById(`${type}-notes`).value = '';
+  });
+  document.getElementById('history-card').style.display = 'none';
+  initGrids();
+  refreshSummary('auto');
+  refreshSummary('home');
+  showToast('已重置');
+}
+
+// ── Helpers ──
+function buildAddCard(type) {
+  const div = document.createElement('div');
+  div.className = 'add-card'; div.id = `${type}-add-card`;
+  div.setAttribute('onclick', `addQuote('${type}')`);
+  div.innerHTML = `
+    <div class="add-card-icon">＋</div>
+    <div class="add-card-text">添加报价方案</div>
+    <div style="font-size:11px;color:#cbd5e1;text-align:center">从不同保险公司获取报价</div>`;
+  return div;
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function safeCloseModal(id) {
+  if (!confirm('确定要关闭吗？未保存的内容将丢失。')) return;
+  document.getElementById(id).classList.remove('open');
+}
+function nextYearRange() {
+  const now = new Date(); const y = now.getFullYear(); const m = String(now.getMonth()+1).padStart(2,'0');
+  return `${y}/${m} → ${y+1}/${m}`;
+}
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r.toISOString().split('T')[0]; }
+function addOneYear(dateStr) { const d = new Date(dateStr + 'T00:00:00'); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast'); t.textContent = msg; t.className = `toast ${type} show`;
+  clearTimeout(t._to); t._to = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Init ──
+autoConnect();
+initGrids();
+loadQuoteDraft();
+
+// Close modals on backdrop click (with confirmation)
+['confirm-modal','decline-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) safeCloseModal(id);
+  });
+});
+</script>
+<script src="ams_i18n.js"></script>
+</body>
+</html>

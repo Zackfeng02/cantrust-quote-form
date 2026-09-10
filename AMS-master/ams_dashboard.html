@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMS · 保险代理管理系统</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ams_i18n.js"></script>
+<script src="ams_bootstrap.js"></script>
+<style>
+  /* ── Reset & Variables ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:       #0d1b2a;
+    --navy-mid:   #152336;
+    --navy-light: #1e3450;
+    --navy-hover: #243d5e;
+    --accent:     #e8a020;
+    --accent-dim: #c4851a;
+    --red:        #e05252;
+    --green:      #3fc98b;
+    --blue:       #4a9edd;
+    --text-1:     #f0f4f8;
+    --text-2:     #a8bcd0;
+    --text-3:     #607a93;
+    --border:     rgba(255,255,255,0.07);
+    --card-bg:    #ffffff;
+    --page-bg:    #f0f4f8;
+    --card-border:#e2e8f0;
+    --dark-text:  #1a2e42;
+    --mid-text:   #4a6478;
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--page-bg);
+    color: var(--dark-text);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 100;
+    border-right: 1px solid var(--border);
+  }
+
+  .sidebar-logo {
+    padding: 28px 24px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .logo-mark {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--text-1);
+    letter-spacing: -0.5px;
+  }
+  .sidebar-logo .logo-mark span { color: var(--accent); }
+  .sidebar-logo .logo-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-nav { flex: 1; padding: 16px 12px; }
+  .nav-section-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 12px 4px;
+    margin-top: 8px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--navy-hover); color: var(--text-1); }
+  .nav-item.active {
+    background: var(--navy-light);
+    color: var(--text-1);
+    font-weight: 500;
+  }
+  .nav-item.active .nav-icon { color: var(--accent); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .lang-toggle{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:8px;color:var(--text-2);font-size:13px}
+  .lang-toggle:hover{background:var(--navy-hover);color:var(--text-1)}
+  .lang-icon{font-size:16px}
+  .lang-label{font-weight:600;letter-spacing:.5px}
+  .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--navy-mid);
+  }
+  .user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: var(--navy);
+    flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; color: var(--text-1); font-weight: 500; }
+  .user-role { font-size: 11px; color: var(--text-3); }
+
+  /* ── Main Content ── */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--card-border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark-text);
+  }
+  .topbar-date {
+    font-size: 13px;
+    color: var(--mid-text);
+  }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--navy-light); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--mid-text);
+    border: 1px solid var(--card-border);
+  }
+  .btn-ghost:hover { background: var(--page-bg); }
+
+  .content { padding: 28px 32px; flex: 1; }
+
+  /* ── Stat Cards ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .stat-card.orange::before { background: var(--accent); }
+  .stat-card.red::before    { background: var(--red); }
+  .stat-card.green::before  { background: var(--green); }
+  .stat-card.blue::before   { background: var(--blue); }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--mid-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--dark-text);
+    line-height: 1;
+  }
+  .stat-sub {
+    font-size: 12px;
+    color: var(--mid-text);
+    margin-top: 6px;
+  }
+  .stat-icon {
+    position: absolute;
+    top: 20px; right: 20px;
+    font-size: 22px;
+    opacity: 0.15;
+  }
+
+  /* ── Section Layout ── */
+  .section-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+  }
+
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark-text);
+  }
+  .panel-count {
+    background: var(--page-bg);
+    color: var(--mid-text);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+  }
+
+  /* ── Renewal Table ── */
+  .renewal-table { width: 100%; border-collapse: collapse; }
+  .renewal-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--mid-text);
+    padding: 10px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .renewal-table td {
+    padding: 13px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f4f8;
+    vertical-align: middle;
+  }
+  .renewal-table tr:last-child td { border-bottom: none; }
+  .renewal-table tr:hover td { background: #fafcff; }
+  .renewal-table tr.clickable-row { cursor: pointer; }
+  .renewal-table tr.clickable-row:hover td { background: #fffbf0; }
+  .renewal-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:var(--accent); color:var(--navy); border:none; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; transition:all .18s; }
+  .renewal-btn:hover { background:var(--amber2,#f5b840); transform:translateY(-1px); }
+
+  .client-name-cell { font-weight: 500; color: var(--dark-text); }
+  .client-code-cell { font-size: 12px; color: var(--mid-text); font-family: monospace; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-auto     { background: #e8f4ff; color: #1a6baa; }
+  .badge-home     { background: #fff0e0; color: #a05c10; }
+  .badge-commercial { background: #f0e8ff; color: #6a2aaa; }
+  .badge-other    { background: #f0f4f8; color: #607a93; }
+
+  .days-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 64px;
+    text-align: center;
+  }
+  .days-urgent  { background: #fff0f0; color: var(--red); border: 1px solid #ffd5d5; }
+  .days-warning { background: #fff8e8; color: #b06000; border: 1px solid #ffd580; }
+  .days-normal  { background: #edfaf4; color: #1a7a50; border: 1px solid #b0e8cc; }
+
+  .status-chip { display:inline-block; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:600; }
+  .status-active         { background:#edfaf4; color:#1a7a50; }
+  .status-pending-renewal { background:#fff8e8; color:#b06000; }
+  .status-pending-confirm { background:#fef3e0; color:#c87800; }
+
+  /* ── Tasks Panel ── */
+  .task-list { padding: 8px 0; }
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid #f0f4f8;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item:hover { background: #fafcff; }
+
+  .task-status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .dot-pending  { background: var(--accent); box-shadow: 0 0 0 3px rgba(232,160,32,0.15); }
+  .dot-contacted{ background: var(--blue); }
+  .dot-quoting  { background: #9b59b6; }
+  .dot-completed{ background: var(--green); }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--dark-text);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .task-meta {
+    font-size: 11px;
+    color: var(--mid-text);
+    margin-top: 3px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .task-type-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .tag-renewal { background: #fff8e8; color: #b06000; }
+  .tag-followup { background: #e8f4ff; color: #1a6baa; }
+  .tag-manual { background: #f0f4f8; color: #607a93; }
+
+  /* ── Status Select ── */
+  .status-select {
+    font-size: 11px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--card-border);
+    background: var(--page-bg);
+    color: var(--mid-text);
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  /* ── Config Screen ── */
+  #config-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .config-card {
+    background: var(--navy-mid);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 440px;
+    max-width: 90vw;
+  }
+  .config-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-1);
+    margin-bottom: 6px;
+  }
+  .config-logo span { color: var(--accent); }
+  .config-sub {
+    font-size: 13px;
+    color: var(--text-3);
+    margin-bottom: 28px;
+  }
+  .config-field { margin-bottom: 16px; }
+  .config-label {
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    font-weight: 500;
+    display: block;
+  }
+  .config-input {
+    width: 100%;
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text-1);
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .config-input:focus { border-color: var(--accent); }
+  .config-hint {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 4px;
+  }
+  .config-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: var(--navy);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s;
+  }
+  .config-btn:hover { background: var(--accent-dim); }
+  .config-error {
+    color: #ff7070;
+    font-size: 12px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* ── Loading ── */
+  .loading-row td {
+    text-align: center;
+    padding: 40px;
+    color: var(--mid-text);
+    font-size: 14px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid var(--card-border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Empty State ── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--mid-text);
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-text { font-size: 14px; }
+
+  /* ── Page Fade In ── */
+  .main { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ── Mobile ── */
+  @media (max-width: 900px) {
+    .sidebar { width: 60px; }
+    .sidebar-logo .logo-mark, .sidebar-logo .logo-sub,
+    .nav-item span, .nav-section-label, .user-name, .user-role { display: none; }
+    .main { margin-left: 60px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .section-grid { grid-template-columns: 1fr; }
+    .content { padding: 16px; }
+    .topbar { padding: 0 16px; }
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--navy); color: var(--text-1); padding: 12px 20px;
+    border-radius: 10px; font-size: 14px; font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    transform: translateY(80px); opacity: 0; transition: all 0.25s;
+  }
+  .toast.show { transform: none; opacity: 1; }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error   { border-left: 3px solid var(--red); }
+
+  /* ── Follow-Up Today ── */
+  .followup-section {
+    margin-bottom: 24px;
+  }
+  .followup-section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark-text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .followup-count-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: 'Outfit', sans-serif;
+  }
+  .followup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .followup-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    border-left: 4px solid #ef4444;
+  }
+  .followup-card.today {
+    border-left-color: #f59e0b;
+  }
+  .followup-card-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .followup-card-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--dark-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .followup-card-meta {
+    font-size: 12px;
+    color: var(--mid-text);
+    margin-top: 4px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .followup-overdue {
+    color: #ef4444;
+    font-weight: 600;
+  }
+  .followup-count-pill {
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 8px;
+  }
+  .followup-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .followup-actions button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-snooze {
+    background: #f0f4f8;
+    color: var(--dark-text);
+  }
+  .btn-snooze:hover { background: #e2e8f0; }
+  .btn-followup-done {
+    background: #10b981;
+    color: #fff;
+  }
+  .btn-followup-done:hover { background: #059669; }
+  .followup-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--mid-text);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Config Screen ── -->
+<div id="config-screen">
+  <div class="config-card">
+    <div class="config-logo">AMS<span>·</span></div>
+    <div class="config-sub" data-i18n="config_sub">请输入您的 Supabase 连接信息以开始使用</div>
+
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_url_label">Project URL</label>
+      <input class="config-input" id="cfg-url" type="text"
+             placeholder="https://xxxxxxxxxx.db.co"
+             value="">
+      <div class="config-hint" data-i18n="config_hint_url">在 Supabase > Project Settings > API 中找到</div>
+    </div>
+
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_key_label">Anon Public Key</label>
+      <input class="config-input" id="cfg-key" type="password"
+             placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      <div class="config-hint" data-i18n="config_hint_key">Project API Keys 中的 anon / public key</div>
+    </div>
+
+    <button class="config-btn" onclick="connectSupabase()" data-i18n="config_connect">连接并进入系统</button>
+    <div class="config-error" id="cfg-error"></div>
+  </div>
+</div>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AMS<span>·</span></div>
+    <div class="logo-sub">Insurance Manager</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-i18n="nav_main">主菜单</div>
+    <a class="nav-item active" href="#"><span class="nav-icon">⊞</span><span class="nav-label" data-i18n="nav_dashboard">仪表盘</span></a>
+    <a class="nav-item" href="ams_clients.html"><span class="nav-icon">👤</span><span class="nav-label" data-i18n="nav_clients">客户管理</span></a>
+    <a class="nav-item" href="ams_policies.html"><span class="nav-icon">📋</span><span class="nav-label" data-i18n="nav_policies">保单管理</span></a>
+    <a class="nav-item" href="ams_tasks.html"><span class="nav-icon">✓</span><span class="nav-label" data-i18n="nav_tasks">待办任务</span></a>
+    <div class="nav-section-label" style="margin-top:16px;" data-i18n="nav_business">业务</div>
+    <a class="nav-item" href="ams_quotes.html"><span class="nav-icon">💲</span><span class="nav-label" data-i18n="nav_quotes">新客户报价</span></a>
+    <a class="nav-item" href="ams_import_quote.html"><span class="nav-icon">📥</span><span class="nav-label" data-i18n="nav_import">报价导入</span></a>
+    <a class="nav-item" href="ams_renewal.html"><span class="nav-icon">🔄</span><span class="nav-label" data-i18n="nav_renewal">续保对比</span></a>
+    <div class="nav-section-label" style="margin-top:16px;" data-i18n="nav_records">记录</div>
+    <a class="nav-item" href="ams_changes.html"><span class="nav-icon">📝</span><span class="nav-label" data-i18n="nav_changes">变更记录</span></a>
+    <a class="nav-item" href="ams_reports.html"><span class="nav-icon">📊</span><span class="nav-label" data-i18n="nav_reports">报表</span></a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="lang-toggle" onclick="toggleLang()" title="Switch Language">
+      <span class="lang-icon">🌐</span>
+      <span class="lang-label" id="lang-label">EN</span>
+    </div>
+    <div class="user-chip">
+      <div class="user-avatar" id="user-avatar">我</div>
+      <div>
+        <div class="user-name" data-i18n="user_name">独立经纪人</div>
+        <div class="user-role">Administrator</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-title" data-i18n="nav_dashboard">仪表盘</div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="today-date"></div>
+      <button class="btn btn-ghost" onclick="loadDashboard()" data-i18n="btn_refresh">↻ 刷新</button>
+      <button class="btn btn-primary" data-i18n="btn_new_client">＋ 新增客户</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      <a class="btn btn-ghost" href="ams_import_archive.html">Archive Import</a>
+      <a class="btn btn-ghost" href="ams_data_sweeper.html">Data Sweeper</a>
+      <a class="btn btn-ghost" href="ams_delete_center.html">Delete Center</a>
+    </div>
+    <!-- Follow-Up Today -->
+    <div class="followup-section" id="followup-section">
+      <h2>
+        <span data-i18n="followup_today">今日跟进</span>
+        <span class="followup-count-badge" id="followup-badge" style="display:none">0</span>
+      </h2>
+      <div class="followup-list" id="followup-list">
+        <div class="followup-empty" data-i18n="followup_empty">今日无待跟进事项 ✓</div>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-grid">
+      <div class="stat-card orange">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-label" data-i18n="stat_renew60">60天内续保</div>
+        <div class="stat-value" id="stat-expiring">—</div>
+        <div class="stat-sub" data-i18n="stat_renew60_sub">张保单即将到期</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-label" data-i18n="stat_urgent14">14天内紧急</div>
+        <div class="stat-value" id="stat-urgent">—</div>
+        <div class="stat-sub" data-i18n="stat_urgent14_sub">需立即跟进</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label" data-i18n="stat_clients">客户总数</div>
+        <div class="stat-value" id="stat-clients">—</div>
+        <div class="stat-sub" data-i18n="stat_clients_sub">位活跃客户</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #ef4444">
+        <div class="stat-icon">📅</div>
+        <div class="stat-label" data-i18n="followup_needs">需跟进</div>
+        <div class="stat-value" id="stat-followup">—</div>
+        <div class="stat-sub" data-i18n="followup_today">今日跟进</div>
+      </div>
+    </div>
+
+    <!-- Main Section -->
+    <div class="section-grid">
+
+      <!-- Renewal Table -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title" data-i18n="panel_renewal">续保预警（未来60天）</div>
+          <span class="panel-count" id="renewal-count" data-i18n="loading">加载中…</span>
+        </div>
+        <table class="renewal-table">
+          <thead>
+            <tr>
+              <th data-i18n="th_client">客户</th>
+              <th data-i18n="th_type">险种</th>
+              <th data-i18n="th_insurer">保险公司</th>
+              <th data-i18n="th_expiry">到期日</th>
+              <th data-i18n="th_premium">保费</th>
+              <th data-i18n="th_days_left">剩余天数</th>
+              <th data-i18n="th_status">״̬</th>
+              <th data-i18n="th_action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="renewal-tbody">
+            <tr class="loading-row">
+              <td colspan="8"><span class="spinner"></span><span data-i18n="loading">加载中…</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tasks Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title" data-i18n="nav_tasks">待办任务</div>
+          <span class="panel-count" id="task-count" data-i18n="loading">加载中…</span>
+        </div>
+        <div class="task-list" id="task-list">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// I18N — Internationalization
+// ════════════════════════════════════════
+const I18N = {
+  zh: {
+    // Nav
+    nav_main:'主菜单', nav_dashboard:'仪表盘', nav_clients:'客户管理', nav_policies:'保单管理',
+    nav_tasks:'待办任务', nav_business:'业务', nav_quotes:'新客户报价', nav_import:'报价导入',
+    nav_renewal:'续保对比', nav_records:'记录', nav_changes:'变更记录', nav_reports:'报表',
+    user_name:'独立经纪人',
+    // Config
+    config_sub:'请输入您的 Supabase 连接信息以开始使用',
+    config_hint_url:'在 Supabase > Project Settings > API 中找到',
+    config_hint_key:'Project API Keys 中的 anon / public key',
+    config_connect:'连接并进入系统',
+    config_err_empty:'请填写 Project URL 和 Anon Key',
+    config_err_url:'URL 格式不正确，应以 https:// 开头',
+    config_err_fail:'连接失败：',
+    // Topbar
+    btn_refresh:'↻ 刷新', btn_new_client:'＋ 新增客户',
+    // Stats
+    stat_renew60:'60天内续保', stat_renew60_sub:'张保单即将到期',
+    stat_urgent14:'14天内紧急', stat_urgent14_sub:'需立即跟进',
+    stat_clients:'客户总数', stat_clients_sub:'位活跃客户',
+    stat_tasks:'待处理任务', stat_tasks_sub:'项未完成',
+    // Panels
+    panel_renewal:'续保预警（未来60天）', loading:'加载中…',
+    // Table headers
+    th_client:'客户', th_type:'险种', th_insurer:'保险公司', th_expiry:'到期日',
+    th_premium:'保费', th_days_left:'剩余天数', th_status:'״̬', th_action:'操作',
+    // Dynamic
+    unit_policies:'张', unit_items:'项',
+    expires_today:'今天到期', expired_ago:'已过期{n}天', days_left:'{n} 天',
+    status_active:'有效', status_pending_renewal:'待审核', status_pending_confirm:'待确认',
+    type_auto:'车险', type_home:'家财险', type_commercial:'商业险', type_other:'其他',
+    awaiting_feedback:'待客户反馈', btn_renewal:'🔄 续保对比',
+    empty_no_renewals:'未来60天内没有即将到期的保单',
+    empty_all_done:'所有任务已处理完毕',
+    task_renewal:'续保', task_followup:'跟进', task_manual:'手动',
+    status_pending:'待处理', status_contacted:'已联系', status_quoting:'报价中',
+    status_completed:'已完成', status_abandoned:'放弃',
+    due_prefix:'到期 ', no_due_date:'无截止日期',
+    load_failed:'加载失败：', update_failed:'更新失败：',
+  },
+  en: {
+    // Nav
+    nav_main:'Main Menu', nav_dashboard:'Dashboard', nav_clients:'Clients', nav_policies:'Policies',
+    nav_tasks:'Tasks', nav_business:'Business', nav_quotes:'New Quote', nav_import:'Import Quote',
+    nav_renewal:'Renewal', nav_records:'Records', nav_changes:'Changes', nav_reports:'Reports',
+    user_name:'Independent Broker',
+    // Config
+    config_sub:'Enter your Supabase credentials to get started',
+    config_hint_url:'Found in Supabase > Project Settings > API',
+    config_hint_key:'anon / public key from Project API Keys',
+    config_connect:'Connect & Enter',
+    config_err_empty:'Please fill in Project URL and Anon Key',
+    config_err_url:'Invalid URL format — must start with https://',
+    config_err_fail:'Connection failed: ',
+    // Topbar
+    btn_refresh:'↻ Refresh', btn_new_client:'＋ New Client',
+    // Stats
+    stat_renew60:'Renewals (60d)', stat_renew60_sub:'policies expiring soon',
+    stat_urgent14:'Urgent (14d)', stat_urgent14_sub:'require immediate action',
+    stat_clients:'Total Clients', stat_clients_sub:'active clients',
+    stat_tasks:'Pending Tasks', stat_tasks_sub:'incomplete',
+    // Panels
+    panel_renewal:'Renewal Alerts (Next 60 Days)', loading:'Loading…',
+    // Table headers
+    th_client:'Client', th_type:'Type', th_insurer:'Insurer', th_expiry:'Expiry',
+    th_premium:'Premium', th_days_left:'Days Left', th_status:'Status', th_action:'Action',
+    // Dynamic
+    unit_policies:' policies', unit_items:' items',
+    expires_today:'Expires today', expired_ago:'Expired {n}d ago', days_left:'{n} days',
+    status_active:'Active', status_pending_renewal:'Pending Review', status_pending_confirm:'Pending Confirmation',
+    type_auto:'Auto', type_home:'Home', type_commercial:'Commercial', type_other:'Other',
+    awaiting_feedback:'Awaiting Feedback', btn_renewal:'🔄 Renewal',
+    empty_no_renewals:'No policies expiring in the next 60 days',
+    empty_all_done:'All tasks completed',
+    task_renewal:'Renewal', task_followup:'Follow-up', task_manual:'Manual',
+    status_pending:'Pending', status_contacted:'Contacted', status_quoting:'Quoting',
+    status_completed:'Completed', status_abandoned:'Abandoned',
+    due_prefix:'Due ', no_due_date:'No due date',
+    load_failed:'Load failed: ', update_failed:'Update failed: ',
+  }
+};
+
+let LANG = localStorage.getItem('ams_lang') || 'zh';
+
+function t(key, params) {
+  let s = (I18N[LANG] && I18N[LANG][key]) || (I18N.zh[key]) || key;
+  if (params) { for (const [k,v] of Object.entries(params)) s = s.replace(`{${k}}`, v); }
+  return s;
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const txt = t(key);
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = txt;
+    else el.textContent = txt;
+  });
+  // Update lang toggle label
+  const lbl = document.getElementById('lang-label');
+  if (lbl) lbl.textContent = LANG === 'zh' ? 'EN' : '中文';
+  // Update date format
+  const dateEl = document.getElementById('today-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString(
+    LANG === 'zh' ? 'zh-CN' : 'en-CA',
+    { year:'numeric', month:'long', day:'numeric', weekday:'long' }
+  );
+  // Update page title
+  document.title = LANG === 'zh' ? 'AMS · 保险代理管理系统' : 'AMS · Insurance Agency Manager';
+}
+
+function toggleLang() {
+  LANG = LANG === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('ams_lang', LANG);
+  applyLang();
+  // Re-render dynamic content
+  if (db) loadDashboard();
+}
+
+function getLang() {
+  return window.__amsGetLang ? window.__amsGetLang() : (localStorage.getItem('ams_lang') || 'zh');
+}
+
+t = function(key, params) {
+  LANG = getLang();
+  let s = window.__amsT ? window.__amsT(key, LANG) : key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) s = s.replace(`{${k}}`, v);
+  }
+  return s;
+};
+
+applyLang = function() {
+  LANG = getLang();
+  if (window.__amsTranslate) window.__amsTranslate(LANG);
+  const lbl = document.getElementById('lang-label');
+  if (lbl) lbl.textContent = LANG === 'zh' ? 'EN' : '中文';
+  const dateNode = document.getElementById('today-date');
+  if (dateNode) {
+    dateNode.textContent = new Date().toLocaleDateString(
+      LANG === 'zh' ? 'zh-CN' : 'en-CA',
+      { year:'numeric', month:'long', day:'numeric', weekday:'long' }
+    );
+  }
+  document.title = LANG === 'zh' ? 'AMS · 保险代理管理系统' : 'AMS · Insurance Agency Manager';
+};
+
+toggleLang = function() {
+  const next = getLang() === 'zh' ? 'en' : 'zh';
+  if (window.__amsSetLang) window.__amsSetLang(next);
+  else localStorage.setItem('ams_lang', next);
+  LANG = next;
+  applyLang();
+  if (db) loadDashboard();
+};
+
+// ── Globals ──
+let db = null;
+
+// ── Date Display ──
+const dateEl = document.getElementById('today-date');
+dateEl.textContent = new Date().toLocaleDateString(
+  getLang() === 'zh' ? 'zh-CN' : 'en-CA',
+  { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }
+);
+
+// Apply language on load
+applyLang();
+
+// ── Connect Supabase ──
+async function connectSupabase() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  const errEl = document.getElementById('cfg-error');
+  errEl.style.display = 'none';
+
+  if (!url || !key) {
+    errEl.textContent = t('config_err_empty');
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!url.startsWith('https://')) {
+    errEl.textContent = t('config_err_url');
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    db = window.supabase.createClient(url, key);
+    // Test connection
+    const { error } = await db.from('clients').select('id').limit(1);
+    if (error) throw error;
+
+    if (window.AMSBootstrap) window.AMSBootstrap.storeCredentials(url, key);
+
+    document.getElementById('config-screen').style.display = 'none';
+    loadDashboard();
+  } catch (e) {
+    errEl.textContent = t('config_err_fail') + (e.message || '');
+    errEl.style.display = 'block';
+  }
+}
+
+// Auto-reconnect from shared local/browser bootstrap
+(async function autoConnect() {
+  const creds = window.AMSBootstrap ? await window.AMSBootstrap.getCredentials() : null;
+  let url = creds?.url, key = creds?.key;
+  if (url && key) {
+    document.getElementById('cfg-url').value = url; document.getElementById('cfg-key').value = key;
+    db = window.supabase.createClient(url, key);
+    if (window.AMSBootstrap) window.AMSBootstrap.storeCredentials(url, key);
+    document.getElementById('config-screen').style.display = 'none';
+    loadDashboard();
+  }
+})();
+
+// ── Load Dashboard ──
+async function loadDashboard() {
+  await Promise.all([loadFollowUps(), loadRenewalData(), loadTaskData(), loadStats()]);
+}
+
+// ── Stats ──
+async function loadStats() {
+  try {
+    const [{ count: clientCount }, { data: renewals }, { data: urgentData }] = await Promise.all([
+      db.from('clients').select('*', { count: 'exact', head: true }),
+      db.from('v_renewal_dashboard').select('days_until_expiry'),
+      db.from('v_renewal_dashboard').select('policy_id').lte('days_until_expiry', 14)
+    ]);
+
+    document.getElementById('stat-clients').textContent  = clientCount ?? '—';
+    document.getElementById('stat-expiring').textContent = renewals?.length ?? '—';
+    document.getElementById('stat-urgent').textContent   = (urgentData?.filter(r => r.days_until_expiry >= 0).length) ?? '—';
+  } catch(e) { console.error('Stats error:', e); }
+}
+
+// ── Renewal Data ──
+async function loadRenewalData() {
+  const tbody = document.getElementById('renewal-tbody');
+  try {
+    const { data, error } = await db
+      .from('v_renewal_dashboard')
+      .select('*')
+      .order('days_until_expiry', { ascending: true });
+
+    if (error) throw error;
+
+    document.getElementById('renewal-count').textContent =
+      data.length > 0 ? data.length + t('unit_policies') : '0' + t('unit_policies');
+
+    if (data.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="8">
+          <div class="empty-state">
+            <div class="empty-icon">✓</div>
+            <div class="empty-text">${t('empty_no_renewals')}</div>
+          </div>
+        </td></tr>`;
+      return;
+    }
+
+    const STATUS_MAP = {
+      active: { label: t('status_active'), cls: 'status-active' },
+      pending_renewal: { label: t('status_pending_renewal'), cls: 'status-pending-renewal' },
+      pending_confirmation: { label: t('status_pending_confirm'), cls: 'status-pending-confirm' },
+    };
+
+    tbody.innerHTML = data.map(row => {
+      const days = row.days_until_expiry;
+      const daysClass = days <= 14 ? 'days-urgent' : days <= 30 ? 'days-warning' : 'days-normal';
+      const daysLabel = days === 0 ? t('expires_today') : days < 0 ? t('expired_ago',{n:Math.abs(days)}) : t('days_left',{n:days});
+
+      const typeMap = { auto: t('type_auto'), home: t('type_home'), commercial: t('type_commercial'), other: t('type_other') };
+      const badgeClass = 'badge-' + row.policy_type;
+
+      const premium = row.premium_amount
+        ? '$' + Number(row.premium_amount).toLocaleString('en-CA', { minimumFractionDigits: 2 })
+        : '—';
+
+      const st = STATUS_MAP[row.policy_status] || { label: row.policy_status, cls: '' };
+
+      const renewalUrl = `ams_renewal.html?policy_id=${encodeURIComponent(row.policy_id)}&code=${encodeURIComponent(row.customer_code)}&type=${encodeURIComponent(row.policy_type)}&pnum=${encodeURIComponent(row.policy_number||'')}&insurer=${encodeURIComponent(row.insurer||'')}&premium=${encodeURIComponent(row.premium_amount||0)}&expiry=${encodeURIComponent(row.expiry_date||'')}`;
+
+      // Action column based on status
+      let actionHtml;
+      if (row.policy_status === 'pending_confirmation') {
+        actionHtml = `<span style="font-size:11px;color:#b06000;font-weight:600">${t('awaiting_feedback')}</span>`;
+      } else {
+        actionHtml = `<a class="renewal-btn" href="${renewalUrl}">${t('btn_renewal')}</a>`;
+      }
+
+      return `
+        <tr class="clickable-row" onclick="window.location='${renewalUrl}'">
+          <td>
+            <div class="client-name-cell">${esc(row.client_name)}</div>
+            <div class="client-code-cell">${esc(row.customer_code)}</div>
+          </td>
+          <td><span class="badge ${badgeClass}">${typeMap[row.policy_type] || row.policy_type}</span></td>
+          <td style="font-size:13px;color:var(--mid-text)">${esc(row.insurer)}</td>
+          <td style="font-size:13px">${row.expiry_date}</td>
+          <td style="font-size:13px;font-weight:500">${premium}</td>
+          <td><span class="days-chip ${daysClass}">${daysLabel}</span></td>
+          <td><span class="status-chip ${st.cls}">${st.label}</span></td>
+          <td onclick="event.stopPropagation()">
+            ${actionHtml}
+          </td>
+        </tr>`;
+    }).join('');
+
+  } catch(e) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="8" style="color:var(--red)">
+      ${t('load_failed')}${e.message}</td></tr>`;
+  }
+}
+
+// ── Task Data ──
+async function loadTaskData() {
+  const list = document.getElementById('task-list');
+  try {
+    const { data, error } = await db
+      .from('tasks')
+      .select(`
+        id, title, task_type, status, due_date,
+        customer_code,
+        clients(full_name)
+      `)
+      .in('status', ['pending', 'contacted', 'quoting'])
+      .order('due_date', { ascending: true })
+      .limit(20);
+
+    if (error) throw error;
+
+    document.getElementById('task-count').textContent =
+      data.length > 0 ? data.length + t('unit_items') : '0' + t('unit_items');
+
+    if (data.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🎉</div>
+          <div class="empty-text">${t('empty_all_done')}</div>
+        </div>`;
+      return;
+    }
+
+    const typeLabel = { renewal_reminder: t('task_renewal'), follow_up: t('task_followup'), manual: t('task_manual') };
+    const typeClass = { renewal_reminder: 'tag-renewal', follow_up: 'tag-followup', manual: 'tag-manual' };
+    const dotClass  = { pending: 'dot-pending', contacted: 'dot-contacted', quoting: 'dot-quoting' };
+    const statusLabel = { pending: t('status_pending'), contacted: t('status_contacted'), quoting: t('status_quoting') };
+
+    list.innerHTML = data.map(task => {
+      const clientName = task.clients?.full_name || task.customer_code || '—';
+      const dueText = task.due_date
+        ? t('due_prefix') + task.due_date
+        : t('no_due_date');
+
+      return `
+        <div class="task-item">
+          <div class="task-status-dot ${dotClass[task.status] || 'dot-pending'}"></div>
+          <div class="task-body">
+            <div class="task-title">${esc(task.title)}</div>
+            <div class="task-meta">
+              <span>${esc(clientName)}</span>
+              <span>·</span>
+              <span>${dueText}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="task-type-tag ${typeClass[task.task_type]}">${typeLabel[task.task_type]}</span>
+            <select class="status-select" onchange="updateTaskStatus('${task.id}', this.value)">
+              <option value="pending"   ${task.status==='pending'  ?'selected':''}>${t('status_pending')}</option>
+              <option value="contacted" ${task.status==='contacted'?'selected':''}>${t('status_contacted')}</option>
+              <option value="quoting"   ${task.status==='quoting'  ?'selected':''}>${t('status_quoting')}</option>
+              <option value="completed" ${task.status==='completed'?'selected':''}>${t('status_completed')}</option>
+              <option value="abandoned" ${task.status==='abandoned'?'selected':''}>${t('status_abandoned')}</option>
+            </select>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    list.innerHTML = `<div class="empty-state" style="color:var(--red)">${t('load_failed')}${e.message}</div>`;
+  }
+}
+
+// ── Update Task Status ──
+async function updateTaskStatus(taskId, newStatus) {
+  try {
+    const { error } = await db
+      .from('tasks')
+      .update({ status: newStatus })
+      .eq('id', taskId);
+    if (error) throw error;
+    // Reload after short delay if marked done/abandoned
+    if (newStatus === 'completed' || newStatus === 'abandoned') {
+      setTimeout(loadDashboard, 500);
+    } else {
+      loadStats();
+    }
+  } catch(e) {
+    alert(t('update_failed') + e.message);
+  }
+}
+
+// Type label/class maps for follow-up section (defined at module scope)
+const FU_TYPE_CLASS = {
+  renewal_reminder: 'tag-renewal',
+  follow_up:        'tag-followup',
+  manual:           'tag-manual',
+  renewal_workflow:  'tag-workflow',
+  change_workflow:   'tag-change'
+};
+const FU_TYPE_LABEL = {
+  renewal_reminder: '续保',
+  follow_up:        '跟进',
+  manual:           '手动',
+  renewal_workflow:  '续保流程',
+  change_workflow:   '变更流程'
+};
+
+async function loadFollowUps() {
+  const list = document.getElementById('followup-list');
+  const badge = document.getElementById('followup-badge');
+  const statEl = document.getElementById('stat-followup');
+  const today = new Date().toISOString().slice(0, 10);
+
+  try {
+    const { data, error } = await db
+      .from('tasks')
+      .select('*, clients(full_name)')
+      .lte('follow_up_date', today)
+      .not('status', 'in', '("completed","abandoned")')
+      .order('follow_up_date', { ascending: true })
+      .order('follow_up_count', { ascending: false });
+
+    if (error) throw error;
+
+    // Update KPI card
+    statEl.textContent = data.length;
+
+    // Update badge
+    if (data.length > 0) {
+      badge.textContent = data.length;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    // Render cards
+    if (data.length === 0) {
+      list.innerHTML = `<div class="followup-empty" data-i18n="followup_empty">${t('followup_empty')}</div>`;
+      return;
+    }
+
+    list.innerHTML = data.map(task => {
+      const clientName = task.clients?.full_name || task.customer_code || '—';
+      const followDate = task.follow_up_date;
+      const diffDays = Math.floor((new Date(today) - new Date(followDate)) / 86400000);
+      const isOverdue = diffDays > 0;
+      const isToday = diffDays === 0;
+      const cardClass = isOverdue ? '' : 'today';
+
+      const overdueHtml = isOverdue
+        ? `<span class="followup-overdue">${t('followup_overdue_days').replace('{n}', diffDays)}</span>`
+        : isToday
+          ? `<span style="color:#f59e0b;font-weight:600">${t('followup_today')}</span>`
+          : '';
+
+      const countHtml = task.follow_up_count > 0
+        ? `<span class="followup-count-pill">${t('followup_count').replace('{n}', task.follow_up_count)}</span>`
+        : '';
+
+      const typeTag = `<span class="task-type-tag ${FU_TYPE_CLASS[task.task_type] || ''}">${FU_TYPE_LABEL[task.task_type] || task.task_type}</span>`;
+
+      return `
+        <div class="followup-card ${cardClass}">
+          <div class="followup-card-body">
+            <div class="followup-card-title">${esc(task.title)}</div>
+            <div class="followup-card-meta">
+              <span>👤 ${esc(clientName)}</span>
+              ${typeTag}
+              ${overdueHtml}
+              ${countHtml}
+            </div>
+          </div>
+          <div class="followup-actions">
+            <button class="btn-snooze" onclick="snoozeTask('${task.id}')" title="${t('followup_done')}">↻ ${t('followup_done')}</button>
+            <button class="btn-followup-done" onclick="completeFollowUp('${task.id}')" title="${t('followup_complete')}">✓</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('loadFollowUps error:', e);
+    list.innerHTML = `<div class="followup-empty">${t('update_failed') || 'Load failed'}</div>`;
+  }
+}
+
+async function snoozeTask(taskId) {
+  try {
+    const { error } = await db.rpc('fn_snooze_task', {
+      p_task_id: taskId,
+      p_days: 3
+    });
+    if (error) throw error;
+    await loadFollowUps();
+  } catch(e) {
+    alert('Snooze failed: ' + e.message);
+  }
+}
+
+async function completeFollowUp(taskId) {
+  try {
+    const { error } = await db
+      .from('tasks')
+      .update({ status: 'completed' })
+      .eq('id', taskId);
+    if (error) throw error;
+    await loadFollowUps();
+    loadStats();
+    loadTaskData();  // Refresh the task list below so it removes the completed task
+  } catch(e) {
+    alert((t('update_failed') || 'Complete failed: ') + e.message);
+  }
+}
+
+// ── Escape HTML ──
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+<div class="toast" id="toast"></div>
+</body>
+</html>

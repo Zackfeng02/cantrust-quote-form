@@ -1,0 +1,12 @@
+{
+  "date": "2026-08-09",
+  "signals": {
+    "framework": "vanilla HTML",
+    "font_stack": "none found",
+    "palette": "none found",
+    "motion": "no motion library",
+    "spacing": "none found"
+  },
+  "preserved": [],
+  "introduced": ["Hum token system", "Application Shell structure", "N1b navigation", "Ft8 footer", "microinteraction discipline"]
+}

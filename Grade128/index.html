@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="MapleQuest helps Canadian Grade 1–8 learners diagnose, practise, and revise school knowledge.">
+  <title>MapleQuest · Learn a little every day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to learning</a>
+  <header class="site-nav" id="site-nav">
+    <div class="nav-inner">
+      <a class="wordmark" href="#home" aria-label="MapleQuest home">
+        <span class="spark" aria-hidden="true"><span></span></span>
+        MapleQuest
+      </a>
+      <nav class="nav-centre" aria-label="Student navigation">
+        <a href="#home" data-nav="home">Home</a>
+        <a href="#subjects" data-nav="subjects">Subjects</a>
+        <a href="#progress" data-nav="progress">My progress</a>
+        <a href="conversation.html">Family chat</a>
+      </nav>
+      <div class="nav-actions">
+        <span class="learner-chip" id="learner-chip" hidden></span>
+        <a class="parent-link" href="parent.html">Parent view</a>
+        <button class="menu-button" id="menu-button" type="button" aria-expanded="false" aria-controls="mobile-nav">Menu</button>
+      </div>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile student navigation" hidden>
+      <a href="#home">Home</a>
+      <a href="#subjects">Subjects</a>
+      <a href="#progress">My progress</a>
+      <a href="conversation.html">Family chat · 亲子聊天</a>
+      <a href="parent.html">Parent view</a>
+    </nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="view" id="home-view" data-view="home">
+      <div class="home-grid page-shell">
+        <div class="welcome-block reveal" style="--i:0">
+          <p class="date-line" id="today-label"></p>
+          <h1 id="welcome-title">A small mission for a sharp mind.</h1>
+          <p class="welcome-copy">Ten questions, mixed from what you’re learning now. We’ll remember what feels easy and what needs another look.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="today-test" type="button">
+              <span>Test for Today</span><span aria-hidden="true">→</span>
+            </button>
+            <button class="btn btn-soft" id="initial-test" type="button">Initial Test</button>
+            <button class="btn btn-soft" id="revise-weakest" type="button">Revise my next skill</button>
+          </div>
+        </div>
+
+        <aside class="mission-card reveal" style="--i:1" aria-labelledby="mission-title">
+          <div class="mission-top">
+            <span class="grade-badge" id="grade-badge">GRADE —</span>
+          </div>
+          <div class="mission-ring" id="mission-ring" role="progressbar" aria-label="Today’s quick-test score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="mission-percent">0%</span></div>
+          <h2 id="mission-title">Ready when you are</h2>
+          <p id="mission-detail">Your first quick test takes about 10 minutes.</p>
+          <button class="progress-check-entry" id="progress-check" type="button">
+            <span><strong>Quick Progress Check</strong><small>5 questions · updates parent analytics</small></span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <div class="streak-line"><span class="streak-mark" aria-hidden="true"></span><strong id="streak-count">0 day streak</strong><span>Keep the rhythm, not the pressure.</span></div>
+          <div class="family-access" id="family-access" hidden><span>Parent access code</span><strong id="family-code"></strong></div>
+        </aside>
+      </div>
+
+      <section class="quick-status band-cyan">
+        <div class="page-shell status-layout">
+          <div>
+            <h2>What your practice is telling us</h2>
+            <p>These numbers come only from completed questions saved to your MapleQuest record.</p>
+          </div>
+          <div class="status-rail" id="status-rail" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="page-shell next-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">A little every day</p>
+            <h2>Your daily study path</h2>
+          </div>
+          <a href="#subjects">See all subjects</a>
+        </div>
+        <div class="continue-layout" id="continue-layout"></div>
+      </section>
+    </section>
+
+    <section class="view page-shell" id="subjects-view" data-view="subjects" hidden>
+      <div class="page-heading">
+        <div>
+          <h1>Subjects, sorted for your grade.</h1>
+        </div>
+        <label class="grade-switcher">Grade
+          <select id="grade-switch" aria-label="Choose grade"></select>
+        </label>
+      </div>
+      <p class="curriculum-note" id="curriculum-note"></p>
+      <div class="subject-list" id="subject-list"></div>
+    </section>
+
+    <section class="view page-shell" id="study-view" data-view="study" hidden>
+      <button class="back-link" id="back-to-subjects" type="button">← All subjects</button>
+      <div id="study-content"></div>
+    </section>
+
+    <section class="view page-shell" id="progress-view" data-view="progress" hidden>
+      <div class="page-heading">
+        <div>
+          <h1>Progress you can understand.</h1>
+        </div>
+        <button class="btn btn-soft" id="repeat-diagnostic" type="button">Retake Initial Test</button>
+      </div>
+      <div class="progress-summary" id="progress-summary"></div>
+      <div class="progress-details" id="progress-details"></div>
+    </section>
+  </main>
+
+  <footer class="foot-marquee" aria-label="Learning reminder">
+    <div class="foot-marquee-track" aria-hidden="true">
+      <span>TRY · NOTICE · REVISE · REST · TRY · NOTICE · REVISE · REST ·</span>
+      <span>TRY · NOTICE · REVISE · REST · TRY · NOTICE · REVISE · REST ·</span>
+    </div>
+    <p class="visually-hidden">Try, notice, revise, rest.</p>
+    <div class="footer-meta page-shell">
+      <span>Ontario curriculum-aligned prototype</span>
+      <a href="parent.html">Open parent view</a>
+      <button type="button" id="source-button">Curriculum sources</button>
+    </div>
+  </footer>
+
+  <dialog class="setup-dialog" id="setup-dialog" aria-labelledby="setup-title">
+    <form method="dialog" id="setup-form">
+      <div class="dialog-mark" aria-hidden="true"><span></span></div>
+      <h2 id="setup-title">Let’s find your starting point.</h2>
+      <p>A short check-in helps MapleQuest choose the right questions. Keep the family code so a parent can review progress later.</p>
+      <div class="form-grid">
+        <label>Your first name
+          <input id="learner-name" name="name" autocomplete="given-name" maxlength="24" required placeholder="e.g. Maya">
+          <span class="field-help">Stored with this learner record on the MapleQuest server.</span>
+        </label>
+        <label>Your grade
+          <select id="learner-grade" name="grade" required></select>
+          <span class="field-help">Choose the grade you’re in now.</span>
+        </label>
+        <label>Parent PIN
+          <input id="parent-pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required placeholder="4 digits">
+          <span class="field-help">Used to open the parent analytics page.</span>
+        </label>
+      </div>
+      <button class="btn btn-primary btn-wide" id="setup-submit" value="default" type="submit">Start my first check-in →</button>
+      <p class="form-error" id="setup-error" role="alert"></p>
+      <p class="privacy-note">Progress is stored by this MapleQuest server. The parent PIN is hashed and is never returned to the browser.</p>
+      <button class="resume-link" id="open-resume" type="button">Resume learner</button>
+    </form>
+  </dialog>
+
+  <dialog class="setup-dialog" id="resume-dialog" aria-labelledby="resume-title">
+    <form method="dialog" id="resume-form">
+      <div class="dialog-mark" aria-hidden="true"><span></span></div>
+      <h2 id="resume-title">Resume a learner record.</h2>
+      <p>Use the family access code and parent PIN from the original setup.</p>
+      <div class="form-grid single-column">
+        <label>Family access code
+          <input id="resume-code" name="familyCode" autocomplete="username" maxlength="10" required placeholder="ABCD2345">
+        </label>
+        <label>Parent PIN
+          <input id="resume-pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password" required placeholder="4 digits">
+        </label>
+      </div>
+      <button class="btn btn-primary btn-wide" id="resume-submit" type="submit">Resume learning →</button>
+      <p class="form-error" id="resume-error" role="alert"></p>
+      <button class="resume-link" id="back-to-setup" type="button">Create new learner</button>
+    </form>
+  </dialog>
+
+  <dialog class="quiz-dialog" id="quiz-dialog" aria-labelledby="quiz-title">
+    <div class="quiz-shell">
+      <header class="quiz-header">
+        <div>
+          <p class="quiz-context" id="quiz-mode">Quick Test</p>
+          <h2 id="quiz-title"><span id="quiz-title-label">Question</span> <span id="question-number">1</span></h2>
+        </div>
+        <button class="icon-button" id="close-quiz" type="button" aria-label="Close test">Close</button>
+      </header>
+      <div class="quiz-progress" role="progressbar" aria-label="Test progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="quiz-progress-bar"></span></div>
+      <div id="quiz-stage" aria-live="polite"></div>
+    </div>
+  </dialog>
+
+  <dialog class="source-dialog" id="source-dialog" aria-labelledby="source-title">
+    <div class="source-shell">
+      <button class="icon-button dialog-close" type="button" data-close-dialog="source-dialog">Close</button>
+      <h2 id="source-title">Ontario curriculum sources</h2>
+      <p>MapleQuest is built for Ontario learners in Grades 1–8. Its learning map uses concise, original interpretations of expectations from Ontario curriculum documents.</p>
+      <ul class="source-list">
+        <li><a href="https://www.ontario.ca/page/math-curriculum-grades-1-8" target="_blank" rel="noreferrer">Ontario · Mathematics, Grades 1–8</a></li>
+        <li><a href="https://www.dcp.edu.gov.on.ca/en/curriculum/elementary-language" target="_blank" rel="noreferrer">Ontario · Language, Grades 1–8</a></li>
+        <li><a href="https://www.dcp.edu.gov.on.ca/en/curriculum/science-technology" target="_blank" rel="noreferrer">Ontario · Science and Technology, Grades 1–8</a></li>
+        <li><a href="https://www.dcp.edu.gov.on.ca/resources/en/subjects/sshg-cws" target="_blank" rel="noreferrer">Ontario · Social Studies, History and Geography</a></li>
+      </ul>
+      <p class="privacy-note">The learning outcomes and questions are concise, original interpretations for demonstration. They are not an official assessment and do not replace a teacher’s judgement.</p>
+    </div>
+  </dialog>
+
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="curriculum.js"></script>
+  <script src="assessment.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

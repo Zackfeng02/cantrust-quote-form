@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quote Import - AMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ams_bootstrap.js"></script>
+<script src="./vendor/pdfjs/pdf.worker.bundle.js"></script>
+<script src="./vendor/pdfjs/pdf.bundle.js"></script>
+<script>
+window.pdfjsWorker = window.pdfjsWorker || window.pdfjsWorkerBundle;
+window.pdfjsLib = window.pdfjsBundle || window.pdfjsLib;
+window.ensurePdfJsWorker = function ensurePdfJsWorker() {
+  if (!window.pdfjsLib || !window.pdfjsLib.GlobalWorkerOptions) return false;
+  if (window.pdfjsLib.GlobalWorkerOptions.workerPort) return true;
+  if (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler) return true;
+  const workerUrl = new URL('./vendor/pdfjs/pdf.worker.bundle.js', window.location.href).href;
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+  return false;
+};
+window.ensurePdfJsWorker();
+</script>
+<style>
+:root {
+  --navy:  #0d1b2a;
+  --navy2: #152336;
+  --navy3: #1c3050;
+  --amber: #e8a020;
+  --amber2:#f5b840;
+  --green: #22c55e;
+  --red:   #ef4444;
+  --blue:  #4a9edd;
+  --text-1:#f0f4f8;
+  --text-2:#94a3b8;
+  --border:#e2e8f0;
+  --bg:    #f0f4f8;
+  --card:  #ffffff;
+  --sidebar-w:220px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:#1e293b;min-height:100vh;display:flex}
+
+.sidebar{width:var(--sidebar-w);background:var(--navy);min-height:100vh;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-mark{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text-1);letter-spacing:-.5px}
+.logo-mark span{color:var(--amber)}
+.sidebar-nav{padding:16px 12px;flex:1}
+.nav-section-label{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;padding:4px 8px 8px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text-2);text-decoration:none;font-size:13.5px;font-weight:500;transition:all .18s;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.06);color:var(--text-1)}
+.nav-item.active{background:rgba(232,160,32,.15);color:var(--amber)}
+.nav-icon{width:18px;text-align:center;font-size:14px;flex-shrink:0}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.07)}
+.version-badge{font-size:10px;color:rgba(255,255,255,.25);font-family:'JetBrains Mono',monospace}
+
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--navy)}
+.page-title span{color:var(--amber)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--amber);color:var(--navy)}
+.btn-primary:hover{background:var(--amber2);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-green{background:#22c55e;color:#fff}
+.btn-green:hover{background:#16a34a;transform:translateY(-1px)}
+.btn-green:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;color:#64748b;border:1px solid var(--border)}
+.btn-ghost:hover{background:#f8fafc}
+.btn-danger{background:#fff0f0;color:var(--red);border:1px solid #ffd5d5}
+.btn-danger:hover{background:#ffe0e0}
+.btn-sm{padding:6px 12px;font-size:12px}
+.content{padding:28px 32px;max-width:1200px}
+
+/* Paste area */
+.paste-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:22px}
+.paste-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--navy);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.paste-sub{font-size:12px;color:#94a3b8;margin-bottom:14px}
+.paste-area{width:100%;min-height:260px;border:2px dashed var(--border);border-radius:10px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#374151;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s}
+.paste-area:focus{border-color:var(--amber);background:#fffdf7}
+.paste-actions{display:flex;gap:10px;margin-top:14px;align-items:center}
+.pdf-upload{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.pdf-file{max-width:100%;font-family:'Outfit',sans-serif;font-size:12px;color:#64748b}
+.pdf-file::file-selector-button{margin-right:10px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;color:#334155;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
+.pdf-file::file-selector-button:hover{background:#eef2f7}
+.parse-status{font-size:12px;color:#94a3b8;margin-left:8px}
+
+/* Preview cards */
+.preview-section{display:none}
+.preview-section.visible{display:block}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.preview-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.preview-card.full-width{grid-column:1/-1}
+.pc-header{padding:14px 18px 10px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+.pc-icon{font-size:18px}
+.pc-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--navy)}
+.pc-body{padding:14px 18px}
+.pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.pc-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 16px}
+.pc-group{display:flex;flex-direction:column;gap:4px}
+.pc-label{font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase}
+.pc-input{padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;color:#1e293b;outline:none;transition:border .18s;width:100%}
+.pc-input:focus{border-color:var(--amber)}
+.pc-value{font-size:13px;font-weight:500;color:#1e293b;padding:7px 0}
+
+/* Coverage table */
+.cov-table{width:100%;border-collapse:collapse}
+.cov-table th{text-align:left;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;padding:6px 10px;border-bottom:2px solid var(--border)}
+.cov-table td{padding:7px 10px;font-size:13px;border-bottom:1px solid #f1f5f9}
+.cov-table tr:last-child td{border-bottom:none}
+.cov-table tr:hover{background:#f8fafc}
+.cov-name{color:#374151;font-weight:500}
+.cov-val{color:#1e293b;font-weight:600;font-family:'JetBrains Mono',monospace;text-align:right}
+
+/* Client match banner */
+.match-banner{border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px}
+.match-found{background:#dcfce7;border:1px solid #86efac}
+.match-found .match-icon{color:#15803d}
+.match-found .match-text{color:#15803d;font-weight:600;font-size:14px}
+.match-new{background:#fef3c7;border:1px solid #fcd34d}
+.match-new .match-icon{color:#b45309}
+.match-new .match-text{color:#b45309;font-weight:600;font-size:14px}
+.match-icon{font-size:20px;flex-shrink:0}
+.match-text{flex:1}
+.match-code-input{padding:8px 12px;border:2px solid #fcd34d;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;width:140px;outline:none;text-transform:uppercase;transition:border-color .18s}
+.match-code-input:focus{border-color:var(--amber)}
+.match-code-err{font-size:11px;color:var(--red);margin-top:4px}
+
+/* Policy summary highlight */
+.policy-highlight{background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.ph-left{flex:1}
+.ph-carrier{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--text-1);margin-bottom:3px}
+.ph-detail{font-size:12px;color:var(--text-2)}
+.ph-right{text-align:right}
+.ph-premium{font-family:'Syne',sans-serif;font-weight:800;font-size:30px;color:var(--amber)}
+.ph-term{font-size:11px;color:var(--text-2);margin-top:2px}
+
+/* Create button area */
+.create-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.create-bar-info{font-size:13px;color:#64748b}
+.create-bar-info strong{color:#1e293b}
+
+/* Mode toggle */
+.mode-btn{background:#f1f5f9;color:#64748b;border:2px solid transparent;transition:all .18s}
+.mode-btn:hover{background:#e2e8f0;color:#374151}
+.mode-btn.active-mode{background:var(--navy);color:var(--text-1);border-color:var(--navy)}
+
+/* Config */
+.config-screen{position:fixed;inset:0;background:rgba(13,27,42,.92);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(8px)}
+.config-box{background:var(--card);border-radius:20px;padding:40px;width:420px;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+.config-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--navy);margin-bottom:6px}
+.config-sub{font-size:13px;color:#64748b;margin-bottom:24px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;transition:border .18s}
+.form-input:focus{border-color:var(--amber)}
+
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--navy);color:var(--text-1);padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .25s;pointer-events:none}
+.toast.show{transform:none;opacity:1}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+
+/* Task preview */
+.task-steps{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.task-step{display:flex;align-items:center;gap:10px;padding:7px 12px;background:#f8fafc;border-radius:8px;border:1px solid #f1f5f9}
+.task-step-num{font-size:13px;font-weight:600;color:#1e293b}
+.task-step-desc{font-size:11px;color:#94a3b8;margin-left:8px}
+
+@media(max-width:900px){
+  .main{margin-left:60px}.content{padding:20px 16px}
+  .preview-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Config -->
+<div class="config-screen" id="config-screen">
+  <div class="config-box">
+    <div class="config-title" data-i18n="import_config_title">Connect Database</div>
+    <div class="config-sub" data-i18n="config_sub">Enter Supabase configuration</div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="cfg_url_label">Project URL</label>
+      <input class="form-input" id="cfg-url" placeholder="https://xxxx.supabase.co" data-i18n-placeholder="config_hint_url" data-i18n-target="placeholder" type="url">
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="cfg_key_label">Anon Key</label>
+      <input class="form-input" id="cfg-key" placeholder="eyJ..." data-i18n-placeholder="config_hint_key" data-i18n-target="placeholder" type="password">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="connectDB()" data-i18n="config_connect">Connect and Continue</button>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">CAN<span>TRUST</span></div>
+    <div class="logo-sub">AMS - Insurance</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-i18n="nav_main">Main</div>
+    <a class="nav-item" href="ams_dashboard.html"><span class="nav-icon">D</span><span class="nav-label" data-i18n="nav_dashboard">Dashboard</span></a>
+    <a class="nav-item" href="ams_clients.html"><span class="nav-icon">C</span><span class="nav-label" data-i18n="nav_clients">Clients</span></a>
+    <a class="nav-item" href="ams_policies.html"><span class="nav-icon">P</span><span class="nav-label" data-i18n="nav_policies">Policies</span></a>
+    <a class="nav-item" href="ams_tasks.html"><span class="nav-icon">T</span><span class="nav-label" data-i18n="nav_tasks">Tasks</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_business">Business</div>
+    <a class="nav-item" href="ams_quotes.html"><span class="nav-icon">Q</span><span class="nav-label" data-i18n="nav_quotes">New Quotes</span></a>
+    <a class="nav-item active" href="#"><span class="nav-icon">I</span><span class="nav-label" data-i18n="nav_import">Quote Import</span></a>
+    <a class="nav-item" href="ams_renewal.html"><span class="nav-icon">R</span><span class="nav-label" data-i18n="nav_renewal">Renewal Compare</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_records">Records</div>
+    <a class="nav-item" href="ams_changes.html"><span class="nav-icon">L</span><span class="nav-label" data-i18n="nav_changes">Change Log</span></a>
+    <a class="nav-item" href="ams_reports.html"><span class="nav-icon">R</span><span class="nav-label" data-i18n="nav_reports">Reports</span></a>
+  </nav>
+  <div class="sidebar-footer"><div class="version-badge">v1.5</div></div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="topbar">
+    <div class="page-title" data-i18n="import_page_title" data-i18n-html="true">Quote <span>Import</span></div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="resetAll()" data-i18n="import_btn_reset">Reset</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- Stage 1: Paste -->
+    <div class="paste-card" id="paste-card">
+      <div class="paste-title" data-i18n="import_paste_title">Paste Quote Text</div>
+      <div class="paste-sub" data-i18n="import_paste_sub">Paste the full quote text copied from an Applied Rating Services .doc file.</div>
+      <textarea class="paste-area" id="paste-area" placeholder="Paste quote text here..." data-i18n-placeholder="import_paste_placeholder" data-i18n-target="placeholder"></textarea>
+      <div class="pdf-upload">
+        <input class="pdf-file" id="pdf-file" type="file" accept="application/pdf">
+        <span class="parse-status" id="pdf-status"></span>
+      </div>
+      <div class="paste-actions">
+        <button class="btn btn-primary" onclick="parseQuoteText()" data-i18n="import_btn_parse">Parse Quote</button>
+        <span class="parse-status" id="parse-status"></span>
+      </div>
+    </div>
+
+    <!-- Stage 2: Preview -->
+    <div class="preview-section" id="preview-section">
+
+      <!-- Policy Summary Highlight -->
+      <div class="policy-highlight" id="policy-highlight">
+        <div class="ph-left">
+          <div class="ph-carrier" id="ph-carrier">—</div>
+          <div class="ph-detail" id="ph-detail">—</div>
+        </div>
+        <div class="ph-right">
+          <div class="ph-premium" id="ph-premium">—</div>
+          <div class="ph-term" id="ph-term">—</div>
+        </div>
+      </div>
+
+      <!-- Import Mode Toggle -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
+        <div style="font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0" data-i18n="import_mode_label">Import Mode</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm mode-btn active-mode" id="mode-binder" onclick="setImportMode('binder')" data-i18n="import_mode_binder">New Binder Policy</button>
+          <button class="btn btn-sm mode-btn" id="mode-history" onclick="setImportMode('history')" data-i18n="import_mode_history">Append History Premium</button>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-left:8px" id="mode-hint" data-i18n="import_mode_hint_binder">Create a temporary binder policy and generate issue, sign, and entry tasks.</div>
+      </div>
+
+      <!-- Client Match Banner -->
+      <div id="match-banner-wrap"></div>
+
+      <!-- History Mode: Policy Selector (hidden by default) -->
+      <div id="history-policy-section" style="display:none">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:18px">
+          <div style="font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px" data-i18n="import_select_policy">选择要追加保费的保单</div>
+          <div style="display:flex;gap:12px;align-items:start">
+            <div style="flex:1">
+              <select class="pc-input" id="h-policy-select" onchange="onHistoryPolicySelect()" style="font-size:13px">
+                <option value="" data-i18n="import_select_policy_default">— Match a client first —</option>
+              </select>
+              <div style="font-size:11px;color:#94a3b8;margin-top:4px" id="h-policy-hint" data-i18n="import_hint_match_first">Policies will appear here after a client is matched.</div>
+            </div>
+            <div style="flex-shrink:0">
+              <label class="pc-label" style="margin-bottom:4px;display:block" data-i18n="import_official_policy_num">Official Policy Number</label>
+              <input class="pc-input" id="h-policy-number" placeholder="" data-i18n-placeholder="import_ph_policy_num_optional" data-i18n-target="placeholder" style="width:180px;font-family:'JetBrains Mono',monospace;font-size:12px">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Cards -->
+      <div class="preview-grid">
+
+        <!-- Client Info -->
+        <div class="preview-card">
+          <div class="pc-header"><span class="pc-icon">Client</span><span class="pc-title" data-i18n="import_client_info">Client Information</span></div>
+          <div class="pc-body">
+            <div class="pc-grid">
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="label_name">Name</label>
+                <input class="pc-input" id="p-name" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="label_phone">Phone</label>
+                <input class="pc-input" id="p-phone" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="label_email">Email</label>
+                <input class="pc-input" id="p-email" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="label_address">Address</label>
+                <input class="pc-input" id="p-address" placeholder="">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vehicle Info -->
+        <div class="preview-card">
+          <div class="pc-header"><span class="pc-icon">Vehicle</span><span class="pc-title" data-i18n="import_vehicle_info">Vehicle Information</span></div>
+          <div class="pc-body">
+            <div class="pc-grid">
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_year">Year</label>
+                <input class="pc-input" id="p-year" placeholder="" type="number">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_make">Make</label>
+                <input class="pc-input" id="p-make" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_model">Model</label>
+                <input class="pc-input" id="p-model" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label">VIN</label>
+                <input class="pc-input" id="p-vin" placeholder="" style="font-family:'JetBrains Mono',monospace;font-size:12px">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_body_style">Body Style</label>
+                <input class="pc-input" id="p-body" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_fuel_use">Fuel / Use</label>
+                <input class="pc-input" id="p-fuel-use" placeholder="">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Driver Info -->
+        <div class="preview-card">
+          <div class="pc-header"><span class="pc-icon">Driver</span><span class="pc-title" data-i18n="import_driver_info">Driver Information</span></div>
+          <div class="pc-body">
+            <div class="pc-grid">
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_dob">Date of Birth</label>
+                <input class="pc-input" id="p-dob" type="date">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_license_num">License Number</label>
+                <input class="pc-input" id="p-license" placeholder="" style="font-family:'JetBrains Mono',monospace;font-size:12px">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_license_class">License Class</label>
+                <input class="pc-input" id="p-license-class" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_training_date">Training Date</label>
+                <input class="pc-input" id="p-training" type="date">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Policy Details -->
+        <div class="preview-card">
+          <div class="pc-header"><span class="pc-icon">Policy</span><span class="pc-title" data-i18n="import_policy_info">Policy Information</span></div>
+          <div class="pc-body">
+            <div class="pc-grid">
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="label_insurer">Insurer</label>
+                <input class="pc-input" id="p-carrier" placeholder="">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_premium_total">Premium Total</label>
+                <input class="pc-input" id="p-premium" type="number" step="0.01" placeholder="0.00">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="label_eff_date">Effective Date</label>
+                <input class="pc-input" id="p-effective" type="date">
+              </div>
+              <div class="pc-group">
+                <label class="pc-label" data-i18n="import_label_term">Term (Months)</label>
+                <select class="pc-input" id="p-term">
+                  <option value="12" data-i18n="import_term_12m">12 个月</option>
+                  <option value="6" data-i18n="import_term_6m">6 个月</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coverages -->
+        <div class="preview-card full-width">
+          <div class="pc-header"><span class="pc-icon">Coverage</span><span class="pc-title" data-i18n="import_coverages">Coverages</span></div>
+          <div class="pc-body" style="padding:0">
+            <table class="cov-table" id="cov-table">
+              <thead>
+                <tr><th style="width:50%">Coverage</th><th style="text-align:right">Limit / Deductible</th><th style="text-align:right">Premium</th></tr>
+              </thead>
+              <tbody id="cov-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Preview (binder mode only) -->
+      <div id="task-preview-section" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px">
+        <div style="font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px" data-i18n="import_auto_tasks_label">Auto-Created After Save</div>
+        <div class="task-steps">
+          <div class="task-step"><span style="font-size:16px">1</span><span class="task-step-num" data-i18n="import_task_step1">1. Issue</span><span class="task-step-desc" data-i18n="import_task_step1_desc">Send to insurer and issue within 1 day</span></div>
+          <div class="task-step"><span style="font-size:16px">2</span><span class="task-step-num" data-i18n="import_task_step2">2. Signature</span><span class="task-step-desc" data-i18n="import_task_step2_desc">Collect signed documents within 3 days</span></div>
+          <div class="task-step"><span style="font-size:16px">3</span><span class="task-step-num" data-i18n="import_task_step3">3. Entry</span><span class="task-step-desc" data-i18n="import_task_step3_desc">Replace binder with official policy number in 5 days</span></div>
+        </div>
+      </div>
+
+      <!-- Create Button Bar -->
+      <div class="create-bar">
+        <div class="create-bar-info" id="create-bar-info" data-i18n="import_binder_info">
+          <strong>Binder Policy</strong> Temporary binder numbers will be replaced with the official policy number during entry.
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost" onclick="backToPaste()" data-i18n="import_btn_back_edit">← Back to Edit</button>
+          <button class="btn btn-green" id="create-btn" onclick="doImport()" disabled data-i18n="import_btn_create_binder">Create Binder Policy</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="ams_i18n.js"></script>
+<script src="ams_quote_import_ui.js"></script>
+<script src="ams_quote_import_parser.js"></script>
+<script src="ams_quote_import_workflow.js"></script>
+<script src="ams_quote_import_actions.js"></script>
+<script>
+window.initQuoteImportPage();
+</script>
+</body>
+</html>
+
+

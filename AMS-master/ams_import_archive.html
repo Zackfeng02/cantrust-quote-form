@@ -1,0 +1,293 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Archive Import - AMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ams_bootstrap.js"></script>
+<script src="./vendor/pdfjs/pdf.worker.bundle.js"></script>
+<script src="./vendor/pdfjs/pdf.bundle.js"></script>
+<script>
+window.pdfjsWorker = window.pdfjsWorker || window.pdfjsWorkerBundle;
+window.pdfjsLib = window.pdfjsBundle || window.pdfjsLib;
+window.ensurePdfJsWorker = function ensurePdfJsWorker() {
+  if (!window.pdfjsLib || !window.pdfjsLib.GlobalWorkerOptions) return false;
+  if (window.pdfjsLib.GlobalWorkerOptions.workerPort) return true;
+  if (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler) return true;
+  const workerUrl = new URL('./vendor/pdfjs/pdf.worker.bundle.js', window.location.href).href;
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+  return false;
+};
+window.ensurePdfJsWorker();
+window.AMSQuoteImportState = window.AMSQuoteImportState || {
+  db: null,
+  parsed: null,
+  importMode: 'binder',
+  archiveQueue: [],
+  archiveQueueSource: 'persisted',
+  archiveSummary: null,
+  archiveSelectedRowId: null,
+  archiveDryRunFiles: [],
+  archiveDryRunFilesByHash: new Map(),
+  archiveStatusFilter: 'all',
+};
+window.AMS_LANG = Object.assign({ btn_refresh:{zh:'??',en:'Refresh'}, archive_total:{zh:'??',en:'Total'}, archive_status_ready:{zh:'???',en:'Ready to Promote'}, archive_status_missing_client:{zh:'????',en:'Missing Client'}, archive_status_duplicate:{zh:'??',en:'Duplicate'}, archive_status_needs_review:{zh:'????',en:'Needs Review'}, archive_status_parse_failed:{zh:'????',en:'Parse Failed'}, archive_status_promoted:{zh:'???',en:'Promoted'}, archive_filter_all:{zh:'??',en:'All'}, archive_inspect:{zh:'??',en:'Inspect'}, archive_promote:{zh:'??',en:'Promote'}, archive_retry:{zh:'??',en:'Retry'}, archive_stage_selected:{zh:'?????',en:'Stage Selected Files'}, archive_save_review:{zh:'????',en:'Save Review'}, archive_review_saved:{zh:'????????',en:'Review saved and reclassified.'}, archive_stage_done:{zh:'???? {0} ???',en:'Staged {0} file(s) into the review queue.'}, archive_detail_customer:{zh:'????',en:'Customer Code'}, archive_detail_status:{zh:'????',en:'Review Status'}, archive_detail_file:{zh:'????',en:'Source File'}, archive_detail_hash:{zh:'????',en:'File Hash'}, archive_detail_policy_type:{zh:'????',en:'Policy Type'}, archive_detail_effective:{zh:'????',en:'Effective Date'}, archive_detail_premium:{zh:'??',en:'Premium'}, archive_detail_insurer:{zh:'????',en:'Insurer'}, archive_detail_confidence:{zh:'????',en:'Parse Confidence'}, archive_detail_promotion:{zh:'????',en:'Promotion Status'}, archive_detail_duplicate:{zh:'???? ID',en:'Duplicate Of'}, archive_detail_notes:{zh:'?? / Parse Notes',en:'Notes / Parse Notes'}, archive_detail_policy_number:{zh:'????',en:'Policy Number'}, archive_detail_live_edit:{zh:'????????????',en:'Persisted rows can be corrected and reclassified here before promotion.'}, archive_summary_note_dry_run:{zh:'Dry run ??',en:'Dry-run queue'}, archive_summary_note_persisted:{zh:'??????',en:'Persisted queue'}, archive_queue_sub_dry_run:{zh:'???? PDF ? dry run ???',en:'Showing dry-run results from the selected PDFs.'}, archive_queue_sub_persisted:{zh:'????????????????',en:'Showing persisted import rows from the database.'}, archive_empty_dry_run:{zh:'?? dry run ???',en:'No dry-run records yet.'}, archive_empty_persisted:{zh:'???????????????',en:'No persisted archive records found.'}, archive_client_id:{zh:'?? ID: {0}',en:'Client ID: {0}'}, archive_no_client_link:{zh:'??????',en:'No client link'}, archive_value_na:{zh:'??',en:'N/A'}, archive_msg_select_files:{zh:'????????? PDF ???',en:'Select one or more PDF files first.'}, archive_msg_dry_run_done:{zh:'Dry run ??? {0} ????',en:'Dry-run staged {0} file(s).'}, archive_msg_load_fail:{zh:'?????????{0}',en:'Failed to load archive queue: {0}'}, archive_msg_row_unpersisted:{zh:'?????????',en:'This row is not yet persisted.'}, archive_msg_not_ready:{zh:'???????????',en:'This record is not ready to promote.'}, archive_msg_promoted:{zh:'????????',en:'Archive record promoted.'}, archive_msg_promotion_failed:{zh:'?????{0}',en:'Promotion failed: {0}'}, archive_msg_connect_first:{zh:'????????',en:'Connect to the database first.'}, archive_msg_no_ready:{zh:'?????????',en:'No ready records to promote.'}, archive_msg_no_editable_row:{zh:'????????????',en:'Select a persisted queue row to review.'}, archive_msg_promote_batch_result:{zh:'??? {0} ???????',en:'Promoted {0} ready record(s).'}, archive_msg_queue_refreshed:{zh:'????????',en:'Archive queue refreshed.'}, archive_msg_files_selected:{zh:'??? {0} ?????? Dry Run ????????????',en:'{0} file(s) selected. Use Dry Run to stage them in-page.'} }, window.AMS_LANG || {});
+window._t = function _t(key, ...args) {
+  const lang = localStorage.getItem('ams_lang') || 'zh';
+  const entry = window.AMS_LANG ? window.AMS_LANG[key] : null;
+  let text = entry ? (entry[lang] || entry.zh || key) : key;
+  for (let i = 0; i < args.length; i++) text = String(text).replace(`{${i}}`, args[i]);
+  return text;
+};
+window.setParseStatus = function setParseStatus(id, message) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = message || '';
+};
+window.readQuoteImportFormSnapshot = function readQuoteImportFormSnapshot() { return {}; };
+window.renderPreview = function renderPreview() {};
+window.showToast = function showToast(message, type = '') {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.className = `toast show${type ? ` ${type}` : ''}`;
+  window.clearTimeout(window.__archiveToastTimer);
+  window.__archiveToastTimer = window.setTimeout(() => { toast.className = 'toast'; }, 2500);
+};
+</script>
+<style>
+:root{--navy:#0d1b2a;--amber:#e8a020;--amber2:#f5b840;--green:#22c55e;--red:#ef4444;--text-1:#f0f4f8;--text-2:#94a3b8;--border:#e2e8f0;--bg:#f0f4f8;--card:#fff;--sidebar-w:220px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:#1e293b;min-height:100vh;display:flex}
+.sidebar{width:var(--sidebar-w);background:var(--navy);min-height:100vh;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-mark{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text-1)}
+.logo-mark span{color:var(--amber)}
+.logo-sub{margin-top:6px;font-size:12px;color:rgba(255,255,255,.45)}
+.sidebar-nav{padding:16px 12px;flex:1}
+.nav-section-label{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;padding:4px 8px 8px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text-2);text-decoration:none;font-size:13.5px;font-weight:500;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.06);color:var(--text-1)}
+.nav-item.active{background:rgba(232,160,32,.15);color:var(--amber)}
+.nav-icon{width:18px;text-align:center;font-size:14px;flex-shrink:0}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.07)}
+.version-badge{font-size:10px;color:rgba(255,255,255,.25);font-family:'JetBrains Mono',monospace}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--navy)}
+.page-title span{color:var(--amber)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;text-decoration:none}
+.btn-primary{background:var(--amber);color:var(--navy)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:transparent;color:#64748b;border:1px solid var(--border)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.content{padding:28px 32px;max-width:1320px}
+.page-grid{display:grid;grid-template-columns:1fr;gap:18px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.panel-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--navy)}
+.panel-sub{font-size:12px;color:#94a3b8;margin-top:4px}
+.control-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.archive-file{max-width:100%;font-family:'Outfit',sans-serif;font-size:12px;color:#64748b}
+.archive-file::file-selector-button{margin-right:10px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;color:#334155;font-size:12px;font-weight:600;cursor:pointer}
+.summary-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+.summary-card{border:1px solid var(--border);border-radius:12px;padding:14px;background:linear-gradient(180deg,#fff,#f8fafc)}
+.summary-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;font-weight:700;margin-bottom:10px}
+.summary-value{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--navy);line-height:1}
+.summary-note{font-size:11px;color:#64748b;margin-top:6px}
+.filter-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.field-label{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase}
+.field-select{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;min-width:220px}
+.field-select:focus{border-color:var(--amber);outline:none}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px}
+.queue-table{width:100%;border-collapse:collapse;min-width:960px;background:#fff}
+.queue-table th{text-align:left;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.6px;text-transform:uppercase;padding:12px;border-bottom:2px solid var(--border);background:#fafbfc}
+.queue-table td{padding:12px;font-size:13px;border-bottom:1px solid #eef2f7;vertical-align:top}
+.queue-table tr:hover{background:#f8fafc}
+.queue-table tr.selected{background:#fff8ea}
+.queue-status{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.status-ready_to_promote{background:#dcfce7;color:#15803d}
+.status-missing_client{background:#fef3c7;color:#b45309}
+.status-duplicate{background:#dbeafe;color:#2563eb}
+.status-needs_review{background:#fee2e2;color:#dc2626}
+.status-parse_failed{background:#e5e7eb;color:#374151}
+.status-promoted{background:#e0e7ff;color:#4338ca}
+.queue-actions{display:flex;gap:6px;flex-wrap:wrap}
+.queue-meta{font-size:11px;color:#64748b;margin-top:4px}
+.mono{font-family:'JetBrains Mono',monospace}
+.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.detail-item{padding:12px;border:1px solid var(--border);border-radius:10px;background:#fbfdff}
+.detail-label{font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px}
+.detail-value{font-size:13px;color:#1e293b;word-break:break-word}
+.detail-value.pre{white-space:pre-wrap;line-height:1.6;font-family:'JetBrains Mono',monospace;font-size:12px}
+.detail-input,.detail-textarea,.detail-select{width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font:inherit;color:#1e293b;background:#fff}
+.detail-input:focus,.detail-textarea:focus,.detail-select:focus{outline:none;border-color:var(--amber)}
+.detail-textarea{min-height:96px;resize:vertical}
+.detail-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.detail-banner{grid-column:1 / -1;padding:12px 14px;border-radius:10px;background:#fff8ea;border:1px solid #fcdba7;font-size:13px;color:#8a5a00}
+.detail-empty{padding:18px;border:1px dashed var(--border);border-radius:12px;color:#94a3b8;font-size:13px;text-align:center}
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--navy);color:var(--text-1);padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .25s;pointer-events:none}
+.toast.show{transform:none;opacity:1}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.config-screen{position:fixed;inset:0;background:rgba(13,27,42,.92);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(8px)}
+.config-box{background:var(--card);border-radius:20px;padding:40px;width:420px;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+.config-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--navy);margin-bottom:6px}
+.config-sub{font-size:13px;color:#64748b;margin-bottom:24px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none}
+.form-input:focus{border-color:var(--amber)}
+.hidden{display:none}
+@media(max-width:1100px){.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.main{margin-left:60px}.content{padding:20px 16px}.topbar{padding:0 16px}.summary-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="config-screen" id="config-screen">
+  <div class="config-box">
+    <div class="config-title" data-i18n="archive_config_title">Connect Database</div>
+    <div class="config-sub" data-i18n="config_sub">Enter Supabase configuration</div>
+    <div class="form-group"><label class="form-label" data-i18n="cfg_url_label">Project URL</label><input class="form-input" id="cfg-url" placeholder="https://xxxx.supabase.co" data-i18n-placeholder="config_hint_url" data-i18n-target="placeholder" type="url"></div>
+    <div class="form-group"><label class="form-label" data-i18n="cfg_key_label">Anon Key</label><input class="form-input" id="cfg-key" placeholder="eyJ..." data-i18n-placeholder="config_hint_key" data-i18n-target="placeholder" type="password"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="connectArchiveDB()" data-i18n="config_connect">Connect and Continue</button>
+  </div>
+</div>
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="logo-mark">CAN<span>TRUST</span></div><div class="logo-sub">AMS - Insurance</div></div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-i18n="nav_main">Main</div>
+    <a class="nav-item" href="ams_dashboard.html"><span class="nav-icon">D</span><span data-i18n="nav_dashboard">Dashboard</span></a>
+    <a class="nav-item" href="ams_clients.html"><span class="nav-icon">C</span><span data-i18n="nav_clients">Clients</span></a>
+    <a class="nav-item" href="ams_policies.html"><span class="nav-icon">P</span><span data-i18n="nav_policies">Policies</span></a>
+    <a class="nav-item" href="ams_tasks.html"><span class="nav-icon">T</span><span data-i18n="nav_tasks">Tasks</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_business">Business</div>
+    <a class="nav-item" href="ams_quotes.html"><span class="nav-icon">Q</span><span data-i18n="nav_quotes">New Quotes</span></a>
+    <a class="nav-item" href="ams_import_quote.html"><span class="nav-icon">I</span><span data-i18n="nav_import">Quote Import</span></a>
+    <a class="nav-item active" href="#"><span class="nav-icon">A</span><span data-i18n="nav_archive_import">Archive Import</span></a>
+    <a class="nav-item" href="ams_renewal.html"><span class="nav-icon">R</span><span data-i18n="nav_renewal">Renewal Compare</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_records">Records</div>
+    <a class="nav-item" href="ams_changes.html"><span class="nav-icon">L</span><span data-i18n="nav_changes">Change Log</span></a>
+    <a class="nav-item" href="ams_reports.html"><span class="nav-icon">R</span><span data-i18n="nav_reports">Reports</span></a>
+  </nav>
+  <div class="sidebar-footer"><div class="version-badge">v1.5</div></div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="page-title" data-i18n="archive_page_title" data-i18n-html="true">Archive <span>Import</span></div>
+    <div class="topbar-actions"><button class="btn btn-ghost btn-sm" onclick="loadArchiveImports()" data-i18n="btn_refresh">Refresh</button></div>
+  </header>
+  <div class="content"><div class="page-grid">
+    <section id="archive-import-controls" class="panel">
+      <div class="panel-head"><div><div class="panel-title" data-i18n="archive_controls_title">Archive Import Controls</div><div class="panel-sub" data-i18n="archive_controls_sub">Dry-run selected PDFs, then review and promote ready records.</div></div></div>
+      <div class="control-row">
+        <input class="archive-file" id="archive-pdf-files" type="file" accept="application/pdf" multiple>
+        <button class="btn btn-primary" id="archive-dry-run-btn" onclick="runArchiveDryRun()" data-i18n="archive_dry_run">Dry Run</button>
+        <button class="btn btn-ghost" id="archive-stage-btn" onclick="stageArchiveFiles()" data-i18n="archive_stage_selected">Stage Selected Files</button>
+        <button class="btn btn-green" id="archive-promote-ready-btn" onclick="promoteReadyArchiveRecords()" data-i18n="archive_promote_ready">Promote Ready Records</button>
+      </div>
+      <div class="panel-sub" id="archive-file-hint" data-i18n="archive_controls_hint">Select one or more PDFs to stage them without persisting, or refresh the persisted queue from the database.</div>
+    </section>
+    <section id="archive-import-summary" class="panel">
+      <div class="panel-head"><div><div class="panel-title" data-i18n="archive_summary_title">Import Summary</div><div class="panel-sub" data-i18n="archive_summary_sub">Counts are shown for the current queue view.</div></div></div>
+      <div class="summary-grid" id="archive-summary-grid"></div>
+    </section>
+    <section id="archive-import-filters" class="panel">
+      <div class="panel-head" style="margin-bottom:0">
+        <div><div class="panel-title" data-i18n="archive_filters_title">Filters</div><div class="panel-sub" data-i18n="archive_filters_sub">Narrow the queue by review status.</div></div>
+        <div class="filter-row"><label class="field-label" for="archive-status-filter" data-i18n="archive_filter_label">Review Status</label><select class="field-select" id="archive-status-filter"></select></div>
+      </div>
+    </section>
+    <section id="archive-import-queue" class="panel">
+      <div class="panel-head"><div><div class="panel-title" data-i18n="archive_queue_title">Queue</div><div class="panel-sub" id="archive-queue-sub" data-i18n="archive_queue_sub">Loaded records appear here for inspection and promotion.</div></div></div>
+      <div class="table-wrap"><table class="queue-table"><thead><tr><th data-i18n="archive_th_status">Status</th><th data-i18n="archive_th_customer">Customer</th><th data-i18n="archive_th_file">Source File</th><th data-i18n="archive_th_policy">Policy</th><th data-i18n="archive_th_premium">Premium</th><th data-i18n="archive_th_actions">Actions</th></tr></thead><tbody id="archive-queue-body"></tbody></table></div>
+    </section>
+    <section id="archive-import-detail" class="panel">
+      <div class="panel-head"><div><div class="panel-title" data-i18n="archive_detail_title">Detail</div><div class="panel-sub" data-i18n="archive_detail_sub">Inspect the selected queue row and its parse notes.</div></div></div>
+      <div id="archive-detail-empty" class="detail-empty" data-i18n="archive_detail_empty">Select a queue row to inspect its fields.</div>
+      <div id="archive-detail-content" class="detail-grid hidden"></div>
+    </section>
+  </div></div>
+</main>
+<div class="toast" id="toast"></div>
+<script src="ams_quote_import_parser.js"></script>
+<script src="ams_quote_import_actions.js"></script>
+<script>
+(function () {
+  const state = window.AMSQuoteImportState || (window.AMSQuoteImportState = {});
+  state.db = state.db || null;
+  state.importMode = 'binder';
+  state.archiveQueue = state.archiveQueue || [];
+  state.archiveQueueSource = state.archiveQueueSource || 'persisted';
+  state.archiveSummary = state.archiveSummary || null;
+  state.archiveSelectedRowId = state.archiveSelectedRowId || null;
+  state.archiveDryRunFiles = state.archiveDryRunFiles || [];
+  state.archiveDryRunFilesByHash = state.archiveDryRunFilesByHash || new Map();
+  state.archiveStatusFilter = state.archiveStatusFilter || 'all';
+  const SUMMARY_FIELDS = [['total','archive_total'],['ready_to_promote','archive_status_ready'],['missing_client','archive_status_missing_client'],['duplicate','archive_status_duplicate'],['needs_review','archive_status_needs_review'],['parse_failed','archive_status_parse_failed'],['promoted','archive_status_promoted']];
+  const FILTER_OPTIONS = [['all','archive_filter_all'],['ready_to_promote','archive_status_ready'],['missing_client','archive_status_missing_client'],['duplicate','archive_status_duplicate'],['needs_review','archive_status_needs_review'],['parse_failed','archive_status_parse_failed'],['promoted','archive_status_promoted']];
+  function emptySummary(){return{total:0,ready_to_promote:0,missing_client:0,duplicate:0,needs_review:0,parse_failed:0,promoted:0};}
+  function rowKey(row,index=0){return String(row?.id??row?.source_file_hash??row?.customer_code??row?.duplicate_of_import_id??row?.source_filename??`row-${index}`);}
+  function normalizeRow(row,index,source){return{...row,__archive_source:source,__archive_row_key:rowKey(row,index),__archive_index:index};}
+  function summarizeRows(rows=[]){const summary=emptySummary();summary.total=rows.length;for(const row of rows){const status=row?.review_status||'needs_review';if(status in summary&&status!=='promoted')summary[status]+=1;if(row?.promotion_status==='promoted'||status==='promoted')summary.promoted+=1;}return summary;}
+  function mergePersistedCounts(counts,rows=[]){const summary=emptySummary();if(counts&&typeof counts.total==='number')summary.total=counts.total;if(counts?.by_review_status&&typeof counts.by_review_status==='object'){for(const [status,count] of Object.entries(counts.by_review_status)){if(status in summary)summary[status]=count;}}else Object.assign(summary,summarizeRows(rows));summary.promoted=rows.filter(row=>row?.review_status==='promoted'||row?.promotion_status==='promoted').length;return summary;}
+  function getVisibleRows(){const filter=state.archiveStatusFilter||'all';return(state.archiveQueue||[]).filter(row=>filter==='all'||row.review_status===filter);}
+  function setArchiveStatusFilter(value){state.archiveStatusFilter=value||'all';renderArchiveImportQueue();renderArchiveImportDetail();}
+  function renderArchiveFilterOptions(){const select=document.getElementById('archive-status-filter');if(!select)return;select.innerHTML='';for(const [value,key] of FILTER_OPTIONS){const option=document.createElement('option');option.value=value;option.textContent=window._t(key);select.appendChild(option);}select.value=state.archiveStatusFilter||'all';}
+  function renderArchiveImportSummary(){const grid=document.getElementById('archive-summary-grid');if(!grid)return;const summary=state.archiveSummary||emptySummary();grid.innerHTML='';for(const [field,key] of SUMMARY_FIELDS){const card=document.createElement('div');card.className='summary-card';const label=document.createElement('div');label.className='summary-label';label.textContent=window._t(key);const value=document.createElement('div');value.className='summary-value';value.textContent=String(summary[field]||0);const note=document.createElement('div');note.className='summary-note';note.textContent=field==='total'?window._t(state.archiveQueueSource==='dry-run'?'archive_summary_note_dry_run':'archive_summary_note_persisted'):window._t(key);card.append(label,value,note);grid.appendChild(card);}}
+  function statusClassForRow(row){return`status-${row?.review_status||'needs_review'}`;}
+  function statusLabelForRow(row){
+    const status = row?.review_status || 'needs_review';
+    const key = status === 'ready_to_promote' ? 'archive_status_ready' : `archive_status_${status}`;
+    return window._t(key);
+  }
+  function formatPremium(row){const premium=row?.parsed_premium_amount;if(premium==null||premium==='')return window._t('archive_value_na');const parsed=Number(premium);return Number.isNaN(parsed)?String(premium):parsed.toLocaleString('en-CA',{style:'currency',currency:'CAD'});}
+  function formatPolicy(row){const type=row?.detected_policy_type||window._t('archive_value_na');const effective=row?.parsed_effective_date||window._t('archive_value_na');return type + ' | ' + effective;}
+  function getSelectedArchiveRow(){return(state.archiveQueue||[]).find(item=>item.__archive_row_key===state.archiveSelectedRowId)||null;}
+  function canEditArchiveRow(row){return!!(row?.id&&row?.__archive_source==='persisted'&&row?.promotion_status!=='promoted');}
+  function createDetailItem(labelKey, valueNode){const item=document.createElement('div');item.className='detail-item';const label=document.createElement('div');label.className='detail-label';label.textContent=window._t(labelKey);item.appendChild(label);if(typeof valueNode==='string'){const val=document.createElement('div');val.className='detail-value';val.textContent=valueNode;item.appendChild(val);}else item.appendChild(valueNode);return item;}
+  function buildArchiveDetailInput(row, id, value, type='text'){if(!canEditArchiveRow(row)){const val=document.createElement('div');val.className='detail-value';val.textContent=value||window._t('archive_value_na');return val;}const input=type==='textarea'?document.createElement('textarea'):document.createElement('input');input.id=id;input.className=type==='textarea'?'detail-textarea':'detail-input';if(type==='date'||type==='number')input.type=type;input.value=value||'';if(type==='number')input.step='0.01';return input;}
+  function buildArchivePolicyTypeInput(row){if(!canEditArchiveRow(row)){const val=document.createElement('div');val.className='detail-value';val.textContent=row?.detected_policy_type||window._t('archive_value_na');return val;}const select=document.createElement('select');select.id='archive-review-policy-type';select.className='detail-select';const options=['','auto','home','tenant','condo'];for(const optionValue of options){const option=document.createElement('option');option.value=optionValue;option.textContent=optionValue||window._t('archive_value_na');if((row?.detected_policy_type||'')===optionValue)option.selected=true;select.appendChild(option);}return select;}
+  function renderArchiveImportQueue(){const tbody=document.getElementById('archive-queue-body');const sub=document.getElementById('archive-queue-sub');if(!tbody||!sub)return;const rows=getVisibleRows();tbody.innerHTML='';sub.textContent=window._t(state.archiveQueueSource==='dry-run'?'archive_queue_sub_dry_run':'archive_queue_sub_persisted');if(!rows.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=6;td.style.cssText='padding:22px;text-align:center;color:#94a3b8';td.textContent=window._t(state.archiveQueueSource==='dry-run'?'archive_empty_dry_run':'archive_empty_persisted');tr.appendChild(td);tbody.appendChild(tr);return;}rows.forEach((row,index)=>{const tr=document.createElement('tr');if(row.__archive_row_key===state.archiveSelectedRowId)tr.classList.add('selected');const cells=[document.createElement('td'),document.createElement('td'),document.createElement('td'),document.createElement('td'),document.createElement('td'),document.createElement('td')];const status=document.createElement('span');status.className=`queue-status ${statusClassForRow(row)}`;status.textContent=statusLabelForRow(row);cells[0].appendChild(status);const customerCode=document.createElement('div');customerCode.className='mono';customerCode.textContent=row.customer_code||window._t('archive_value_na');const customerMeta=document.createElement('div');customerMeta.className='queue-meta';customerMeta.textContent=row.client_id?window._t('archive_client_id',row.client_id):window._t('archive_no_client_link');cells[1].append(customerCode,customerMeta);const fileName=document.createElement('div');fileName.textContent=row.source_filename||window._t('archive_value_na');const fileMeta=document.createElement('div');fileMeta.className='queue-meta mono';fileMeta.textContent=row.source_file_hash||row.__archive_row_key;cells[2].append(fileName,fileMeta);cells[3].textContent=formatPolicy(row);cells[4].textContent=formatPremium(row);const actions=document.createElement('div');actions.className='queue-actions';const inspectBtn=document.createElement('button');inspectBtn.type='button';inspectBtn.className='btn btn-ghost btn-sm';inspectBtn.textContent=window._t('archive_inspect');inspectBtn.onclick=()=>selectArchiveRow(row.__archive_row_key);const promoteBtn=document.createElement('button');promoteBtn.type='button';promoteBtn.className='btn btn-green btn-sm';promoteBtn.textContent=window._t('archive_promote');promoteBtn.disabled=!(row.id&&window.canPromoteImport(row)===true);promoteBtn.onclick=()=>promoteArchiveRow(row);const retryBtn=document.createElement('button');retryBtn.type='button';retryBtn.className='btn btn-ghost btn-sm';retryBtn.textContent=window._t('archive_retry');retryBtn.onclick=()=>retryArchiveRow(row);actions.append(inspectBtn,promoteBtn,retryBtn);cells[5].appendChild(actions);tr.append(...cells);tr.addEventListener('click',event=>{if(event.target.closest('button'))return;selectArchiveRow(row.__archive_row_key);});tbody.appendChild(tr);});}
+  function renderArchiveImportDetail(){const empty=document.getElementById('archive-detail-empty');const content=document.getElementById('archive-detail-content');if(!empty||!content)return;const row=getSelectedArchiveRow();if(!row){empty.classList.remove('hidden');content.classList.add('hidden');content.innerHTML='';return;}empty.classList.add('hidden');content.classList.remove('hidden');content.innerHTML='';if(canEditArchiveRow(row)){const banner=document.createElement('div');banner.className='detail-banner';banner.textContent=window._t('archive_detail_live_edit');content.appendChild(banner);}const policyNumber=row?.parsed_payload?.policy?.policy_number||'';const notesValue=row?.parse_notes||'';content.appendChild(createDetailItem('archive_detail_customer',buildArchiveDetailInput(row,'archive-review-customer-code',row.customer_code||'')));content.appendChild(createDetailItem('archive_detail_status',statusLabelForRow(row)));content.appendChild(createDetailItem('archive_detail_file',row.source_filename||window._t('archive_value_na')));content.appendChild(createDetailItem('archive_detail_hash',row.source_file_hash||window._t('archive_value_na')));content.appendChild(createDetailItem('archive_detail_policy_type',buildArchivePolicyTypeInput(row)));content.appendChild(createDetailItem('archive_detail_effective',buildArchiveDetailInput(row,'archive-review-effective-date',row.parsed_effective_date||'','date')));content.appendChild(createDetailItem('archive_detail_premium',buildArchiveDetailInput(row,'archive-review-premium',row.parsed_premium_amount==null?'':String(row.parsed_premium_amount),'number')));content.appendChild(createDetailItem('archive_detail_insurer',buildArchiveDetailInput(row,'archive-review-insurer',row.parsed_insurer||'')));content.appendChild(createDetailItem('archive_detail_policy_number',buildArchiveDetailInput(row,'archive-review-policy-number',policyNumber)));content.appendChild(createDetailItem('archive_detail_confidence',row.parse_confidence||window._t('archive_value_na')));content.appendChild(createDetailItem('archive_detail_promotion',row.promotion_status||window._t('archive_value_na')));content.appendChild(createDetailItem('archive_detail_duplicate',row.duplicate_of_import_id?String(row.duplicate_of_import_id):window._t('archive_value_na')));content.appendChild(createDetailItem('archive_detail_notes',buildArchiveDetailInput(row,'archive-review-notes',notesValue,'textarea')));if(canEditArchiveRow(row)){const actions=document.createElement('div');actions.className='detail-actions';const saveBtn=document.createElement('button');saveBtn.type='button';saveBtn.className='btn btn-primary';saveBtn.textContent=window._t('archive_save_review');saveBtn.onclick=()=>saveArchiveReview(row);const retryBtn=document.createElement('button');retryBtn.type='button';retryBtn.className='btn btn-ghost';retryBtn.textContent=window._t('archive_retry');retryBtn.onclick=()=>retryArchiveRow(row);const promoteBtn=document.createElement('button');promoteBtn.type='button';promoteBtn.className='btn btn-green';promoteBtn.textContent=window._t('archive_promote');promoteBtn.disabled=!window.canPromoteImport(row);promoteBtn.onclick=()=>promoteArchiveRow(row);actions.append(saveBtn,retryBtn,promoteBtn);content.appendChild(actions);}}
+  function selectArchiveRow(rowKey){state.archiveSelectedRowId=rowKey;renderArchiveImportQueue();renderArchiveImportDetail();}
+  function getSelectedArchiveFiles(){const input=document.getElementById('archive-pdf-files');return Array.from(input?.files||[]);}
+  function readArchiveReviewForm(){return{customer_code:document.getElementById('archive-review-customer-code')?.value||'',detected_policy_type:document.getElementById('archive-review-policy-type')?.value||'',parsed_effective_date:document.getElementById('archive-review-effective-date')?.value||'',parsed_premium_amount:document.getElementById('archive-review-premium')?.value||'',parsed_insurer:document.getElementById('archive-review-insurer')?.value||'',policy_number:document.getElementById('archive-review-policy-number')?.value||'',parse_notes:document.getElementById('archive-review-notes')?.value||''};}
+  function buildParseFailedRow(file,error,index){return normalizeRow({id:`parse-failed-${index+1}-${Date.now().toString(36)}`,source_filename:file?.name||'Unknown file',source_file_hash:'',customer_code:null,detected_policy_type:null,parsed_effective_date:null,parsed_premium_amount:null,parsed_insurer:null,review_status:'parse_failed',promotion_status:'blocked',parse_confidence:'low',parse_notes:error?.message||'Parse failed'},index,'dry-run');}
+  async function runArchiveDryRun(files=null){const selectedFiles=files?Array.from(files):getSelectedArchiveFiles();if(!selectedFiles.length){showToast(window._t('archive_msg_select_files'),'error');return;}state.archiveQueueSource='dry-run';state.archiveDryRunFiles=selectedFiles.slice();state.archiveDryRunFilesByHash=new Map();const nextRows=[];for(let index=0;index<selectedFiles.length;index++){const file=selectedFiles[index];try{const result=await window.stageQuotePdfFile({file,filename:file.name,dryRun:true});const row=normalizeRow({...result?.record||{},source_filename:result?.filename||file.name,source_file_hash:result?.file_hash||result?.record?.source_file_hash||''},index,'dry-run');nextRows.push(row);if(row.source_file_hash)state.archiveDryRunFilesByHash.set(row.source_file_hash,file);}catch(error){nextRows.push(buildParseFailedRow(file,error,index));}}state.archiveQueue=nextRows;state.archiveSummary=summarizeRows(nextRows);state.archiveSelectedRowId=nextRows[0]?.__archive_row_key||null;renderArchiveImportSummary();renderArchiveImportQueue();renderArchiveImportDetail();showToast(window._t('archive_msg_dry_run_done',nextRows.length),'success');}
+  async function loadArchiveImports(){if(!state.db){state.archiveQueue=[];state.archiveSummary=emptySummary();state.archiveQueueSource='persisted';state.archiveSelectedRowId=null;renderArchiveImportSummary();renderArchiveImportQueue();renderArchiveImportDetail();return;}try{const[rows,counts]=await Promise.all([window.listQuotePdfImports(),window.getQuotePdfImportCounts()]);const normalized=(rows||[]).map((row,index)=>normalizeRow(row,index,'persisted'));state.archiveQueue=normalized;state.archiveQueueSource='persisted';state.archiveSummary=mergePersistedCounts(counts,normalized);if(!state.archiveSelectedRowId||!normalized.some(row=>row.__archive_row_key===state.archiveSelectedRowId))state.archiveSelectedRowId=normalized[0]?.__archive_row_key||null;renderArchiveImportSummary();renderArchiveImportQueue();renderArchiveImportDetail();}catch(error){showToast(window._t('archive_msg_load_fail',error.message),'error');}}
+  async function stageArchiveFiles(){if(!state.db){showToast(window._t('archive_msg_connect_first'),'error');return;}const files=getSelectedArchiveFiles();if(!files.length){showToast(window._t('archive_msg_select_files'),'error');return;}const results=await window.stageQuotePdfFiles(files);const selectedHash=results[0]?.record?.source_file_hash||null;await loadArchiveImports();if(selectedHash){const selectedRow=(state.archiveQueue||[]).find(row=>row.source_file_hash===selectedHash);if(selectedRow)state.archiveSelectedRowId=selectedRow.__archive_row_key;}renderArchiveImportQueue();renderArchiveImportDetail();showToast(window._t('archive_stage_done',results.length),'success');}
+  async function saveArchiveReview(rowOverride=null){const row=rowOverride||getSelectedArchiveRow();if(!canEditArchiveRow(row)){showToast(window._t('archive_msg_no_editable_row'),'error');return;}const updated=await window.saveQuotePdfImportReview(row.id,readArchiveReviewForm());state.archiveSelectedRowId=String(updated.id);await loadArchiveImports();state.archiveSelectedRowId=String(updated.id);renderArchiveImportQueue();renderArchiveImportDetail();showToast(window._t('archive_review_saved'),'success');}
+  async function promoteArchiveRow(row){if(!row||!row.id){showToast(window._t('archive_msg_row_unpersisted'),'error');return;}if(!window.canPromoteImport(row)){showToast(window._t('archive_msg_not_ready'),'error');return;}try{await window.promoteQuotePdfImport(row);showToast(window._t('archive_msg_promoted'),'success');await loadArchiveImports();}catch(error){showToast(window._t('archive_msg_promotion_failed',error.message),'error');}}
+  async function promoteReadyArchiveRecords(){if(!state.db){showToast(window._t('archive_msg_connect_first'),'error');return;}const readyRows=(state.archiveQueue||[]).filter(row=>row.id&&window.canPromoteImport(row));if(!readyRows.length){showToast(window._t('archive_msg_no_ready'),'error');return;}let promoted=0;for(const row of readyRows){try{await window.promoteQuotePdfImport(row);promoted+=1;}catch(error){console.warn('Promote ready archive record failed:',error);}}await loadArchiveImports();showToast(window._t('archive_msg_promote_batch_result',promoted),promoted?'success':'error');}
+  async function retryArchiveRow(row){if(state.archiveQueueSource==='dry-run'){const file=row?.source_file_hash&&state.archiveDryRunFilesByHash.get(row.source_file_hash);if(file){await runArchiveDryRun([file]);return;}if(state.archiveDryRunFiles.length){await runArchiveDryRun(state.archiveDryRunFiles);return;}}if(row?.id&&window.retryQuotePdfImportReview){const retried=await window.retryQuotePdfImportReview(row.id);state.archiveSelectedRowId=String(retried.id||row.id);}await loadArchiveImports();renderArchiveImportQueue();renderArchiveImportDetail();showToast(window._t('archive_msg_queue_refreshed'),'success');}
+  async function autoConnectArchiveDB(){const creds=await window.AMSBootstrap.getCredentials();if(creds?.url&&creds?.key){state.db=window.supabase.createClient(creds.url,creds.key);window.AMSBootstrap.storeCredentials(creds.url,creds.key);document.getElementById('config-screen').style.display='none';await loadArchiveImports();}}
+  function connectArchiveDB(){const url=document.getElementById('cfg-url').value.trim();const key=document.getElementById('cfg-key').value.trim();if(!url||!key){showToast(window._t('config_err_empty'),'error');return;}state.db=window.supabase.createClient(url,key);window.AMSBootstrap.storeCredentials(url,key);document.getElementById('config-screen').style.display='none';loadArchiveImports();}
+  function initArchivePage(){renderArchiveFilterOptions();renderArchiveImportSummary();renderArchiveImportQueue();renderArchiveImportDetail();const select=document.getElementById('archive-status-filter');if(select)select.addEventListener('change',event=>setArchiveStatusFilter(event.target.value));const input=document.getElementById('archive-pdf-files');if(input)input.addEventListener('change',()=>{const count=getSelectedArchiveFiles().length;const hint=document.getElementById('archive-file-hint');if(hint)hint.textContent=count?window._t('archive_msg_files_selected',count):window._t('archive_controls_hint');});document.addEventListener('ams-lang-changed',()=>{renderArchiveFilterOptions();renderArchiveImportSummary();renderArchiveImportQueue();renderArchiveImportDetail();const hint=document.getElementById('archive-file-hint');if(hint&&!getSelectedArchiveFiles().length)hint.textContent=window._t('archive_controls_hint');});autoConnectArchiveDB();}
+  window.runArchiveDryRun=runArchiveDryRun;
+  window.stageArchiveFiles=stageArchiveFiles;
+  window.saveArchiveReview=saveArchiveReview;
+  window.renderArchiveImportSummary=renderArchiveImportSummary;
+  window.renderArchiveImportQueue=renderArchiveImportQueue;
+  window.loadArchiveImports=loadArchiveImports;
+  window.promoteReadyArchiveRecords=promoteReadyArchiveRecords;
+  window.promoteArchiveRow=promoteArchiveRow;
+  window.retryArchiveRow=retryArchiveRow;
+  window.selectArchiveRow=selectArchiveRow;
+  window.connectArchiveDB=connectArchiveDB;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initArchivePage);else initArchivePage();
+})();
+</script>
+</body>
+</html>
+
+
+
+
+
+

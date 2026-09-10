@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMS · 保单管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ams_bootstrap.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:        #0d1b2a;
+  --navy-mid:    #152336;
+  --navy-light:  #1e3450;
+  --navy-hover:  #243d5e;
+  --accent:      #e8a020;
+  --accent-dim:  #c4851a;
+  --red:         #e05252;
+  --green:       #3fc98b;
+  --blue:        #4a9edd;
+  --purple:      #9b59b6;
+  --text-1:      #f0f4f8;
+  --text-2:      #a8bcd0;
+  --text-3:      #607a93;
+  --border:      rgba(255,255,255,0.07);
+  --card-bg:     #ffffff;
+  --page-bg:     #f0f4f8;
+  --card-border: #e2e8f0;
+  --dark-text:   #1a2e42;
+  --mid-text:    #4a6478;
+}
+body { font-family: 'Outfit', sans-serif; background: var(--page-bg); color: var(--dark-text); min-height: 100vh; display: flex; overflow-x: hidden; }
+
+/* ── Sidebar ── */
+.sidebar { width: 240px; min-height: 100vh; background: var(--navy); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; border-right: 1px solid var(--border); }
+.sidebar-logo { padding: 28px 24px 24px; border-bottom: 1px solid var(--border); }
+.sidebar-logo .logo-mark { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--text-1); letter-spacing: -0.5px; }
+.sidebar-logo .logo-mark span { color: var(--accent); }
+.sidebar-logo .logo-sub { font-size: 11px; color: var(--text-3); margin-top: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
+.sidebar-nav { flex: 1; padding: 16px 12px; }
+.nav-section-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px 4px; margin-top: 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--text-2); font-size: 14px; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; text-decoration: none; }
+.nav-item:hover { background: var(--navy-hover); color: var(--text-1); }
+.nav-item.active { background: var(--navy-light); color: var(--text-1); font-weight: 500; }
+.nav-item.active .nav-icon { color: var(--accent); }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--navy-mid); }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--navy); flex-shrink: 0; }
+.user-name { font-size: 13px; color: var(--text-1); font-weight: 500; }
+.user-role { font-size: 11px; color: var(--text-3); }
+
+/* ── Main ── */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: var(--card-bg); border-bottom: 1px solid var(--card-border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+/* ── Buttons ── */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: 'Outfit', sans-serif; }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy-light); }
+.btn-accent { background: var(--accent); color: var(--navy); font-weight: 600; }
+.btn-accent:hover { background: var(--accent-dim); }
+.btn-ghost { background: transparent; color: var(--mid-text); border: 1px solid var(--card-border); }
+.btn-ghost:hover { background: var(--page-bg); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: #fff0f0; color: var(--red); border: 1px solid #ffd5d5; }
+.btn-danger:hover { background: #ffe0e0; }
+
+/* ── Layout ── */
+.content { display: flex; height: calc(100vh - 64px); overflow: hidden; }
+
+/* ── List Panel ── */
+.list-panel { width: 400px; flex-shrink: 0; background: var(--card-bg); border-right: 1px solid var(--card-border); display: flex; flex-direction: column; overflow: hidden; }
+.list-toolbar { padding: 16px; border-bottom: 1px solid var(--card-border); display: flex; flex-direction: column; gap: 10px; }
+.search-wrap { position: relative; }
+.search-input { width: 100%; padding: 9px 12px 9px 36px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; font-family: 'Outfit', sans-serif; background: var(--page-bg); color: var(--dark-text); outline: none; transition: border-color 0.15s; }
+.search-input:focus { border-color: var(--accent); background: #fff; }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--mid-text); pointer-events: none; }
+.filter-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-btn { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--card-border); background: var(--page-bg); color: var(--mid-text); transition: all 0.12s; font-family: 'Outfit', sans-serif; }
+.filter-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.filter-btn.active-auto       { background: #e8f4ff; color: #1a6baa; border-color: #b0d4f0; }
+.filter-btn.active-home       { background: #fff0e0; color: #a05c10; border-color: #f0c080; }
+.filter-btn.active-commercial { background: #f0e8ff; color: #6a2aaa; border-color: #c8a0e8; }
+.list-count { font-size: 12px; color: var(--mid-text); padding: 0 16px 8px; }
+.policy-list { flex: 1; overflow-y: auto; }
+
+/* ── Policy List Item ── */
+.policy-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f5f7fa; cursor: pointer; transition: background 0.12s; position: relative; }
+.policy-item:hover { background: #f8faff; }
+.policy-item.selected { background: #eef4ff; border-left: 3px solid var(--navy); }
+.policy-type-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.type-icon-auto       { background: #e8f4ff; }
+.type-icon-home       { background: #fff0e0; }
+.type-icon-commercial { background: #f0e8ff; }
+.type-icon-other      { background: #f0f4f8; }
+.policy-item-body { flex: 1; min-width: 0; }
+.policy-item-number { font-size: 14px; font-weight: 500; color: var(--dark-text); }
+.policy-item-client { font-size: 12px; color: var(--mid-text); margin-top: 1px; }
+.policy-item-meta { font-size: 12px; color: var(--mid-text); margin-top: 3px; display: flex; gap: 8px; align-items: center; }
+.days-pill { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.pill-urgent  { background: #fff0f0; color: var(--red); }
+.pill-warning { background: #fff8e8; color: #b06000; }
+.pill-normal  { background: #edfaf4; color: #1a7a50; }
+.pill-past    { background: #f0f4f8; color: var(--mid-text); }
+.pill-renewed { background: #e8f4ff; color: #1a6baa; }
+
+/* ── Detail Panel ── */
+.detail-panel { flex: 1; overflow-y: auto; background: var(--page-bg); }
+.detail-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--mid-text); gap: 12px; }
+.detail-empty-icon { font-size: 48px; opacity: 0.2; }
+.detail-content { padding: 28px 32px; animation: slideIn 0.2s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+
+/* ── Policy Detail Header ── */
+.policy-detail-header { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.policy-header-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.policy-header-left { display: flex; align-items: center; gap: 16px; }
+.policy-big-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.policy-title-block .policy-number-big { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--dark-text); }
+.policy-title-block .policy-insurer-big { font-size: 14px; color: var(--mid-text); margin-top: 3px; }
+.policy-header-actions { display: flex; gap: 8px; }
+.policy-meta-row { display: flex; gap: 24px; flex-wrap: wrap; }
+.policy-meta-item { display: flex; flex-direction: column; gap: 2px; }
+.policy-meta-label { font-size: 11px; color: var(--mid-text); text-transform: uppercase; letter-spacing: 0.4px; }
+.policy-meta-value { font-size: 15px; font-weight: 600; color: var(--dark-text); }
+.policy-meta-value.premium { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--accent-dim); }
+
+/* ── Status Badge ── */
+.status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.status-active          { background: #edfaf4; color: #1a7a50; }
+.status-pending_renewal      { background: #fff8e8; color: #b06000; }
+.status-pending_confirmation { background: #fef3e0; color: #c87800; }
+.status-renewed              { background: #e8f4ff; color: #1a6baa; }
+.status-cancelled       { background: #fff0f0; color: var(--red); }
+.status-expired         { background: #f0f4f8; color: var(--mid-text); }
+
+/* ── Type Badge ── */
+.type-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.type-auto       { background: #e8f4ff; color: #1a6baa; }
+.type-home       { background: #fff0e0; color: #a05c10; }
+.type-commercial { background: #f0e8ff; color: #6a2aaa; }
+.type-other      { background: #f0f4f8; color: #607a93; }
+
+/* ── Cards ── */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.info-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 18px; }
+.info-card.full { grid-column: 1 / -1; }
+.info-card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--mid-text); margin-bottom: 14px; }
+.info-row { display: flex; flex-direction: column; margin-bottom: 10px; }
+.info-row:last-child { margin-bottom: 0; }
+.info-label { font-size: 11px; color: var(--mid-text); margin-bottom: 2px; }
+.info-value { font-size: 14px; color: var(--dark-text); }
+.info-empty { font-size: 13px; color: var(--mid-text); font-style: italic; }
+
+/* ── Driver Card ── */
+.driver-block { display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8fafc; border: 1px solid var(--card-border); border-radius: 8px; margin-bottom: 8px; }
+.driver-block:last-child { margin-bottom: 0; }
+.driver-role-tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; white-space: nowrap; }
+.tag-primary   { background: #edfaf4; color: #1a7a50; }
+.tag-secondary { background: #e8f4ff; color: #1a6baa; }
+.tag-occasional { background: #f0e8ff; color: #6a2aaa; }
+.driver-info { flex: 1; }
+.driver-name { font-size: 14px; font-weight: 500; color: var(--dark-text); }
+.driver-meta { font-size: 12px; color: var(--mid-text); margin-top: 3px; }
+
+/* ── Section ── */
+.section { margin-bottom: 20px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--dark-text); display: flex; align-items: center; gap: 8px; }
+.section-count { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--page-bg); color: var(--mid-text); border: 1px solid var(--card-border); }
+
+/* ── Timeline ── */
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--card-border); }
+.timeline-item { position: relative; margin-bottom: 12px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 14px 16px; }
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-dot { position: absolute; left: -22px; top: 16px; width: 10px; height: 10px; border-radius: 50%; background: var(--card-bg); border: 2px solid var(--accent); z-index: 1; }
+.timeline-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.timeline-type { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.3px; background: #fff8e8; color: #b06000; }
+.timeline-date { font-size: 12px; color: var(--mid-text); }
+.timeline-summary { font-size: 13px; color: var(--dark-text); line-height: 1.5; }
+
+/* ── Modal ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.6); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--card-bg); border-radius: 16px; width: 680px; max-width: 96vw; max-height: 92vh; overflow-y: auto; transform: translateY(12px); transition: transform 0.2s; box-shadow: 0 24px 64px rgba(0,0,0,0.2); }
+.modal-overlay.open .modal { transform: none; }
+.modal-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--card-bg); z-index: 1; }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--mid-text); padding: 4px; border-radius: 4px; }
+.modal-close:hover { background: var(--page-bg); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--card-border); display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ── Type Selector ── */
+.type-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 4px; }
+.type-option { border: 2px solid var(--card-border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.type-option:hover { border-color: var(--accent); }
+.type-option.selected { border-color: var(--navy); background: #f0f4ff; }
+.type-option .type-emoji { font-size: 24px; }
+.type-option .type-name { font-size: 13px; font-weight: 600; color: var(--dark-text); margin-top: 6px; }
+
+/* ── Form ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group.third { grid-column: span 1; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--mid-text); }
+.form-label .required { color: var(--red); margin-left: 2px; }
+.form-input, .form-select, .form-textarea { padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px; font-family: 'Outfit', sans-serif; color: var(--dark-text); background: #fff; outline: none; transition: border-color 0.15s; width: 100%; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { resize: vertical; min-height: 70px; }
+.form-hint { font-size: 11px; color: var(--mid-text); }
+.form-error { color: var(--red); font-size: 12px; }
+.form-section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--dark-text); margin: 4px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--card-border); grid-column: 1 / -1; }
+.extra-fields-block { display: none; }
+.extra-fields-block.visible { display: contents; }
+
+/* ── Change Modal ── */
+.change-modal .modal { width: 560px; }
+
+/* ── Premium History Table ── */
+.premium-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.premium-table th { text-align: left; font-size: 11px; font-weight: 600; color: var(--mid-text); text-transform: uppercase; letter-spacing: 0.4px; padding: 8px 10px; border-bottom: 2px solid var(--card-border); }
+.premium-table td { padding: 10px 10px; border-bottom: 1px solid #f0f4f8; color: var(--dark-text); }
+.premium-table tr.current-period { background: #f0fdf4; }
+.premium-table tr.future-period { background: #fef9ee; }
+.premium-table .period-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-left: 6px; }
+.period-tag-current { background: #dcfce7; color: #15803d; }
+.period-tag-future  { background: #fef3c7; color: #a16207; }
+.period-tag-past    { background: #f1f5f9; color: #64748b; }
+
+/* ── Config ── */
+#config-screen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.config-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 440px; max-width: 90vw; }
+.config-logo { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+.config-logo span { color: var(--accent); }
+.config-sub { font-size: 13px; color: var(--text-3); margin-bottom: 28px; }
+.config-field { margin-bottom: 16px; }
+.config-label { font-size: 12px; color: var(--text-2); margin-bottom: 6px; font-weight: 500; display: block; }
+.config-input { width: 100%; background: var(--navy); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text-1); font-size: 13px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.15s; }
+.config-input:focus { border-color: var(--accent); }
+.config-hint { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.config-btn { width: 100%; padding: 12px; background: var(--accent); color: var(--navy); border: none; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+.config-btn:hover { background: var(--accent-dim); }
+.config-error { color: #ff7070; font-size: 12px; margin-top: 10px; display: none; }
+
+/* ── Misc ── */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-state { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 10px; color: var(--mid-text); font-size: 14px; }
+.empty-list { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; color: var(--mid-text); gap: 8px; text-align: center; }
+.empty-list-icon { font-size: 32px; opacity: 0.3; }
+.toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; background: var(--navy); color: var(--text-1); padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.2); transform: translateY(80px); opacity: 0; transition: all 0.25s; }
+.toast.show { transform: none; opacity: 1; }
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+.divider { border: none; border-top: 1px solid var(--card-border); margin: 16px 0; grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo .logo-sub, .nav-item .nav-label, .nav-section-label, .user-name, .user-role { display: none; }
+  .main { margin-left: 60px; }
+  .list-panel { width: 100%; }
+  .detail-panel { display: none; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Config -->
+<div id="config-screen">
+  <div class="config-card">
+    <div class="config-logo">AMS<span>·</span></div>
+    <div class="config-sub" data-i18n="config_sub">请输入您的 Supabase 连接信息</div>
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_url_label">Project URL</label>
+      <input class="config-input" id="cfg-url" type="text" placeholder="https://xxxxxxxxxx.supabase.co">
+      <div class="config-hint" data-i18n="config_hint_url">Supabase > Project Settings > API</div>
+    </div>
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_key_label">Anon Public Key</label>
+      <input class="config-input" id="cfg-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+    </div>
+    <button class="config-btn" onclick="connectSupabase()" data-i18n="cfg_connect">连接并进入系统</button>
+    <div class="config-error" id="cfg-error"></div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AMS<span>·</span></div>
+    <div class="logo-sub">Insurance Manager</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-i18n="nav_main">主菜单</div>
+    <a class="nav-item" href="ams_dashboard.html"><span class="nav-icon">⊞</span><span class="nav-label" data-i18n="nav_dashboard">仪表盘</span></a>
+    <a class="nav-item" href="ams_clients.html"><span class="nav-icon">👤</span><span class="nav-label" data-i18n="nav_clients">客户管理</span></a>
+    <a class="nav-item active" href="#"><span class="nav-icon">📋</span><span class="nav-label" data-i18n="nav_policies">保单管理</span></a>
+    <a class="nav-item" href="ams_tasks.html"><span class="nav-icon">✓</span><span class="nav-label" data-i18n="nav_tasks">待办任务</span></a>
+    <div class="nav-section-label" style="margin-top:16px;" data-i18n="nav_business">业务</div>
+    <a class="nav-item" href="ams_quotes.html"><span class="nav-icon">💲</span><span class="nav-label" data-i18n="nav_quotes">新客户报价</span></a>
+    <a class="nav-item" href="ams_import_quote.html"><span class="nav-icon">📥</span><span class="nav-label" data-i18n="nav_import">报价导入</span></a>
+    <a class="nav-item" href="ams_renewal.html"><span class="nav-icon">🔄</span><span class="nav-label" data-i18n="nav_renewal">续保对比</span></a>
+    <div class="nav-section-label" style="margin-top:16px;" data-i18n="nav_records">记录</div>
+    <a class="nav-item" href="ams_changes.html"><span class="nav-icon">📝</span><span class="nav-label" data-i18n="nav_changes">变更记录</span></a>
+    <a class="nav-item" href="ams_reports.html"><span class="nav-icon">📊</span><span class="nav-label" data-i18n="nav_reports">报表</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar">我</div>
+      <div><div class="user-name" data-i18n="user_name">独立经纪人</div><div class="user-role">Administrator</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-title">保单管理</div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="loadPolicies()">↻ 刷新</button>
+      <button class="btn btn-primary" onclick="openNewPolicyModal()">＋ 新增保单</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Policy List -->
+    <div class="list-panel">
+      <div class="list-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="search-input" type="text"
+                 placeholder="搜索保单号、客户、保险公司…" oninput="filterPolicies()">
+        </div>
+        <div class="filter-row">
+          <button class="filter-btn active" data-type="all"        onclick="setFilter('all',this)">全部</button>
+          <button class="filter-btn"        data-type="auto"       onclick="setFilter('auto',this)">🚗 车险</button>
+          <button class="filter-btn"        data-type="home"       onclick="setFilter('home',this)">🏠 家财险</button>
+          <button class="filter-btn"        data-type="commercial" onclick="setFilter('commercial',this)">🏢 商业险</button>
+        </div>
+        <div class="filter-row">
+          <button class="filter-btn active" data-status="active_only" onclick="setStatusFilter('active_only',this)">有效</button>
+          <button class="filter-btn"        data-status="all_status"  onclick="setStatusFilter('all_status',this)">全部状态</button>
+        </div>
+      </div>
+      <div class="list-count" id="list-count"></div>
+      <div class="policy-list" id="policy-list">
+        <div class="loading-state"><span class="spinner"></span> 加载中…</div>
+      </div>
+    </div>
+
+    <!-- Detail -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-empty">
+        <div class="detail-empty-icon">📋</div>
+        <div>选择一张保单查看详情</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Policy Modal ── -->
+<div class="modal-overlay" id="policy-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="policy-modal-title">新增保单</div>
+      <button class="modal-close" onclick="safeCloseModal('policy-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Step 1: Type selector (only for new policy) -->
+      <div id="type-selector-wrap">
+        <div style="font-size:13px;font-weight:600;color:var(--mid-text);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">选择险种</div>
+        <div class="type-selector">
+          <div class="type-option selected" data-type="auto" onclick="selectPolicyType('auto',this)">
+            <div class="type-emoji">🚗</div><div class="type-name">车险</div>
+          </div>
+          <div class="type-option" data-type="home" onclick="selectPolicyType('home',this)">
+            <div class="type-emoji">🏠</div><div class="type-name">家财险</div>
+          </div>
+          <div class="type-option" data-type="commercial" onclick="selectPolicyType('commercial',this)">
+            <div class="type-emoji">🏢</div><div class="type-name">商业险</div>
+          </div>
+          <div class="type-option" data-type="other" onclick="selectPolicyType('other',this)">
+            <div class="type-emoji">📄</div><div class="type-name">其他</div>
+          </div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--card-border);margin:20px 0 16px">
+      </div>
+
+      <div class="form-grid">
+        <!-- Basic fields -->
+        <div class="form-section-title">基本信息</div>
+
+        <div class="form-group">
+          <label class="form-label">客户编码<span class="required">*</span></label>
+          <input class="form-input" id="f-customer-code" type="text"
+                 placeholder="ABCD01" maxlength="6" style="text-transform:uppercase"
+                 oninput="lookupClient()">
+          <div id="client-lookup-result" style="font-size:12px;color:var(--green);margin-top:2px;min-height:16px"></div>
+          <span class="form-error" id="f-ccode-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">保单号<span class="required">*</span></label>
+          <input class="form-input" id="f-policy-number" type="text" placeholder="AUTO-2025-001">
+          <span class="form-error" id="f-pnum-err"></span>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">保险公司<span class="required">*</span></label>
+          <select class="form-select" id="f-insurer">
+            <option value="">— 请选择 —</option>
+          </select>
+          <span class="form-error" id="f-insurer-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">生效日期<span class="required">*</span></label>
+          <input class="form-input" id="f-effective-date" type="date">
+          <span class="form-error" id="f-dates-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">到期日期<span class="required">*</span></label>
+          <input class="form-input" id="f-expiry-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">年保费 (CAD)</label>
+          <input class="form-input" id="f-premium" type="number" step="0.01" min="0" placeholder="1850.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">付款方式</label>
+          <div style="display:flex;gap:16px;padding:8px 0">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+              <input type="radio" name="f-payment-type" value="annual"> 年付
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+              <input type="radio" name="f-payment-type" value="monthly"> 月付
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">保单状态</label>
+          <select class="form-select" id="f-status">
+            <option value="active">有效</option>
+            <option value="pending_renewal">待续保</option>
+            <option value="pending_confirmation">待确认</option>
+            <option value="renewed">已续保</option>
+            <option value="cancelled">已取消</option>
+            <option value="expired">已失效</option>
+          </select>
+        </div>
+
+        <!-- ── Auto Fields ── -->
+        <div class="extra-fields-block visible" id="auto-fields">
+          <div class="form-section-title">🚗 车辆信息</div>
+          <div class="form-group">
+            <label class="form-label">品牌 (Make)</label>
+            <input class="form-input" id="f-make" type="text" placeholder="Toyota">
+          </div>
+          <div class="form-group">
+            <label class="form-label">型号 (Model)</label>
+            <input class="form-input" id="f-model" type="text" placeholder="Camry">
+          </div>
+          <div class="form-group">
+            <label class="form-label">年份 (Year)</label>
+            <input class="form-input" id="f-year" type="number" min="1980" max="2030" placeholder="2021">
+          </div>
+          <div class="form-group">
+            <label class="form-label">VIN 码</label>
+            <input class="form-input" id="f-vin" type="text" placeholder="1HGBH41JXMN109186">
+          </div>
+
+          <div class="form-section-title">🧑‍✈️ 驾驶员信息</div>
+          <div class="form-group">
+            <label class="form-label">Primary Driver 姓名</label>
+            <input class="form-input" id="f-pd-name" type="text" placeholder="张伟">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Primary Driver 驾照号</label>
+            <input class="form-input" id="f-pd-license" type="text" placeholder="A1234567">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Primary Driver 生日</label>
+            <input class="form-input" id="f-pd-dob" type="date">
+          </div>
+          <div class="form-group" style="align-self:end"><!-- spacer --></div>
+
+          <div class="form-group">
+            <label class="form-label">Secondary Driver 姓名</label>
+            <input class="form-input" id="f-sd-name" type="text" placeholder="（选填）">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Secondary Driver 驾照号</label>
+            <input class="form-input" id="f-sd-license" type="text">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Secondary Driver 生日</label>
+            <input class="form-input" id="f-sd-dob" type="date">
+          </div>
+          <div class="form-group" style="align-self:end"><!-- spacer --></div>
+
+          <div class="form-group">
+            <label class="form-label">Occasional Driver 姓名</label>
+            <input class="form-input" id="f-od-name" type="text" placeholder="（选填）">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Occasional Driver 驾照号</label>
+            <input class="form-input" id="f-od-license" type="text">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Occasional Driver 生日</label>
+            <input class="form-input" id="f-od-dob" type="date">
+          </div>
+          <div class="form-group" style="align-self:end"><!-- spacer --></div>
+        </div>
+
+        <!-- ── Home Fields ── -->
+        <div class="extra-fields-block" id="home-fields">
+          <div class="form-section-title">🏠 家财险信息</div>
+          <div class="form-group full">
+            <label class="form-label">物业地址</label>
+            <input class="form-input" id="f-property-address" type="text" placeholder="123 Main St, Toronto, ON">
+          </div>
+          <div class="form-group">
+            <label class="form-label">保障类型</label>
+            <select class="form-select" id="f-coverage-type">
+              <option value="">—</option>
+              <option value="comprehensive">Comprehensive</option>
+              <option value="basic">Basic</option>
+              <option value="tenant">Tenant</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── Commercial Fields ── -->
+        <div class="extra-fields-block" id="commercial-fields">
+          <div class="form-section-title">🏢 商业险信息</div>
+          <div class="form-group full">
+            <label class="form-label">公司名称</label>
+            <input class="form-input" id="f-business-name" type="text" placeholder="ABC 贸易公司">
+          </div>
+          <div class="form-group">
+            <label class="form-label">业务类型</label>
+            <input class="form-input" id="f-business-type" type="text" placeholder="retail / restaurant…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">保额上限 (CAD)</label>
+            <input class="form-input" id="f-coverage-limit" type="number" min="0" placeholder="1000000">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <hr class="divider">
+        <div class="form-group full">
+          <label class="form-label">备注</label>
+          <textarea class="form-textarea" id="f-notes" placeholder="任何额外信息…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseModal('policy-modal')">取消</button>
+      <button class="btn btn-primary" id="policy-save-btn" onclick="savePolicy()">保存保单</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Log Change Modal ── -->
+<div class="modal-overlay change-modal" id="change-modal">
+  <div class="modal" style="width:560px">
+    <div class="modal-header">
+      <div class="modal-title">记录保单变更</div>
+      <button class="modal-close" onclick="safeCloseModal('change-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">变更类型<span class="required">*</span></label>
+          <select class="form-select" id="c-change-type">
+            <option value="address change">地址变更</option>
+            <option value="vehicle add">新增车辆</option>
+            <option value="vehicle delete">删除车辆</option>
+            <option value="vehicle substitute">替换车辆</option>
+            <option value="add driver">新增驾驶员</option>
+            <option value="add home">新增家财险</option>
+            <option value="add condo">新增公寓险</option>
+            <option value="add rental">新增租赁险</option>
+            <option value="cancellation">取消保单</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">变更日期<span class="required">*</span></label>
+          <input class="form-input" id="c-change-date" type="date">
+        </div>
+        <div class="form-group" style="align-self:end">
+          <div style="font-size:12px;color:var(--mid-text)">保单将关联此变更记录</div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">变更摘要<span class="required">*</span></label>
+          <textarea class="form-textarea" id="c-summary" placeholder="简要描述本次变更内容，如：新增次要驾驶员张小明，保费调整 +$120"></textarea>
+          <span class="form-error" id="c-summary-err"></span>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">详细说明（选填）</label>
+          <textarea class="form-textarea" id="c-details" placeholder="可填写变更前后对比，注意事项等…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseModal('change-modal')">取消</button>
+      <button class="btn btn-accent" id="change-save-btn" onclick="saveChange()">记录变更</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Premium Modal -->
+<div class="modal-overlay" id="add-premium-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <div class="modal-title">补录保费记录</div>
+      <button class="modal-close" onclick="safeCloseModal('add-premium-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">保期开始日<span class="required">*</span></label>
+          <input class="form-input" id="ap-eff-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">保期结束日<span class="required">*</span></label>
+          <input class="form-input" id="ap-exp-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">保费金额 (CAD)<span class="required">*</span></label>
+          <input class="form-input" id="ap-premium" type="number" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">付款方式</label>
+          <select class="form-select" id="ap-payment-type">
+            <option value="">未选择</option>
+            <option value="annual">年付</option>
+            <option value="monthly">月付</option>
+          </select>
+        </div>
+        <span class="form-error full" id="ap-err"></span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseModal('add-premium-modal')">取消</button>
+      <button class="btn btn-accent" id="ap-save-btn" onclick="saveAddPremium()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────
+// State
+// ─────────────────────────────────────────
+let db = null;
+let allPolicies = [];
+let filtered = [];
+let activeTypeFilter   = 'all';
+let activeStatusFilter = 'active_only';
+let selectedPolicyId   = null;
+let editingPolicyId    = null;
+let selectedPolicyType = 'auto';
+let changePolicyId     = null;
+let changeCustCode     = null;
+
+const TYPE_EMOJI = { auto:'🚗', home:'🏠', commercial:'🏢', other:'📄' };
+const TYPE_LABEL = { auto:'车险', home:'家财险', commercial:'商业险', other:'其他' };
+const STATUS_LABEL = { active:'有效', pending_renewal:'待续保', pending_confirmation:'待确认', renewed:'已续保', cancelled:'已取消', expired:'已失效' };
+const CHANGE_TYPE_ZH = {
+  'address change':'地址变更','vehicle add':'新增车辆','vehicle delete':'删除车辆',
+  'vehicle substitute':'替换车辆','add driver':'新增驾驶员','add home':'新增家财险',
+  'add condo':'新增公寓险','add rental':'新增租赁险','cancellation':'取消保单','other':'其他'
+};
+
+const INSURER_BY_TYPE = {
+  auto: [
+    'Aviva - CGIG', 'Travelers - DOM', 'Economical - ECON', 'Intact - HALI',
+    'JEVCO - JEI', 'PAFCO - PAFC', 'Facility Nordic - NORD', 'Pembridge - PEM',
+    'SGI Canada - SGI', 'Unica - UNIC', 'Coachman - COAC', 'Echelon - ECHE', 'Wawanesa - WAWA'
+  ],
+  home: [
+    'Aviva - CGIG', 'Travelers - DOM', 'Economical - ECON', 'Intact - HALI',
+    'Max - MAX', 'Optimum - OPT', 'Pembridge - PEM', 'SGI Canada - SGI',
+    'Unica - UNIC', 'Wawanesa - WAWA', 'Apollo - APO', 'Premier - PREM',
+    'Forward - FWD', 'Excess - EXCE', 'Milnco - MILN'
+  ]
+};
+// Commercial and other get combined unique list
+INSURER_BY_TYPE.commercial = [...new Set([...INSURER_BY_TYPE.auto, ...INSURER_BY_TYPE.home])];
+INSURER_BY_TYPE.other = INSURER_BY_TYPE.commercial;
+
+function updateInsurerOptions(preserveValue) {
+  const sel = document.getElementById('f-insurer');
+  const oldVal = preserveValue || sel.value;
+  const options = INSURER_BY_TYPE[selectedPolicyType] || INSURER_BY_TYPE.other;
+  sel.innerHTML = '<option value="">— 请选择 —</option>' +
+    options.map(o => `<option value="${esc(o)}"${o === oldVal ? ' selected' : ''}>${esc(o)}</option>`).join('');
+}
+
+// ─────────────────────────────────────────
+// Connect
+// ─────────────────────────────────────────
+async function connectSupabase() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  const errEl = document.getElementById('cfg-error');
+  errEl.style.display = 'none';
+  if (!url || !key) { errEl.textContent = '请填写配置信息'; errEl.style.display = 'block'; return; }
+  try {
+    db = window.supabase.createClient(url, key);
+    const { error } = await db.from('policies').select('id').limit(1);
+    if (error) throw error;
+    window.AMSBootstrap.storeCredentials(url, key);
+    document.getElementById('config-screen').style.display = 'none';
+    loadPolicies();
+  } catch(e) {
+    errEl.textContent = '连接失败：' + (e.message || '请检查配置');
+    errEl.style.display = 'block';
+  }
+}
+(async function autoConnect() {
+  const creds = await window.AMSBootstrap.getCredentials();
+  if (creds?.url && creds?.key) {
+    document.getElementById('cfg-url').value = creds.url; document.getElementById('cfg-key').value = creds.key;
+    db = window.supabase.createClient(creds.url, creds.key);
+    window.AMSBootstrap.storeCredentials(creds.url, creds.key);
+    document.getElementById('config-screen').style.display = 'none';
+    loadPolicies();
+  }
+})();
+
+// ─────────────────────────────────────────
+// Effective date → Expiry date auto-fill (+1 year)
+// ─────────────────────────────────────────
+let expiryManuallyEdited = false;
+document.getElementById('f-expiry-date').addEventListener('input', () => { expiryManuallyEdited = true; });
+document.getElementById('f-effective-date').addEventListener('change', function() {
+  if (expiryManuallyEdited) return;
+  const val = this.value;
+  if (!val) return;
+  const d = new Date(val + 'T00:00:00');
+  d.setFullYear(d.getFullYear() + 1);
+  document.getElementById('f-expiry-date').value = d.toISOString().split('T')[0];
+});
+
+// ─────────────────────────────────────────
+// Premium display helper (with payment type calculation)
+// ─────────────────────────────────────────
+function calcPremiumDisplay(premium, paymentType, policyType, insurer) {
+  if (!premium) return '—';
+  const amt = Number(premium);
+  const fmtCAD = v => '$' + v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  if (!paymentType || policyType === 'commercial' || policyType === 'other') {
+    return fmtCAD(amt) + ' CAD';
+  }
+
+  if (policyType === 'auto') {
+    if (paymentType === 'monthly') {
+      const feeRate = (insurer || '').toLowerCase().includes('intact') ? 0.012 : 0.013;
+      const monthly = amt * (1 + feeRate) / 12;
+      return fmtCAD(monthly) + ' /月 <span style="font-size:11px;color:var(--mid-text)">(年保费 ' + fmtCAD(amt) + ')</span>';
+    } else {
+      return fmtCAD(amt) + ' /年';
+    }
+  }
+
+  if (policyType === 'home') {
+    if (paymentType === 'monthly') {
+      const monthly = amt * (1 + 0.03 + 0.08) / 12;
+      return fmtCAD(monthly) + ' /月 <span style="font-size:11px;color:var(--mid-text)">(年保费 ' + fmtCAD(amt) + ')</span>';
+    } else {
+      const annual = amt * 1.08;
+      return fmtCAD(annual) + ' /年（含税）<span style="font-size:11px;color:var(--mid-text)">(˰ǰ ' + fmtCAD(amt) + ')</span>';
+    }
+  }
+
+  return fmtCAD(amt) + ' CAD';
+}
+
+// ─────────────────────────────────────────
+// Load Policies
+// ─────────────────────────────────────────
+async function loadPolicies() {
+  document.getElementById('policy-list').innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> 加载中…</div>';
+  try {
+    const { data, error } = await db
+      .from('policies')
+      .select('id, customer_code, policy_number, insurer, policy_type, effective_date, expiry_date, premium_amount, payment_type, status, clients(full_name)')
+      .order('expiry_date', { ascending: true });
+    if (error) throw error;
+    allPolicies = data || [];
+    filterPolicies();
+    // Auto-select policy from URL parameter
+    const params = new URLSearchParams(location.search);
+    const policyId = params.get('policy_id');
+    if (policyId && allPolicies.some(p => p.id === policyId)) {
+      selectPolicy(policyId);
+    }
+    // Pre-filter by customer_code from URL parameter (e.g. from client detail page)
+    const customerCodeParam = params.get('customer_code');
+    if (customerCodeParam) {
+      document.getElementById('search-input').value = customerCodeParam.toUpperCase();
+      filterPolicies();
+    }
+    // Auto-open edit modal (e.g. from change_workflow 录单 completion redirect)
+    const editPolicyId = params.get('edit_policy');
+    if (editPolicyId && allPolicies.some(p => p.id === editPolicyId)) {
+      selectPolicy(editPolicyId);
+      // Remove the param immediately so re-calls to loadPolicies() don't reopen the modal
+      params.delete('edit_policy');
+      history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params.toString() : ''));
+      setTimeout(() => openEditPolicyModal(editPolicyId), 300);
+    }
+  } catch(e) {
+    document.getElementById('policy-list').innerHTML =
+      `<div class="empty-list"><span style="font-size:24px">⚠️</span>${esc(e.message)}</div>`;
+  }
+}
+
+// ─────────────────────────────────────────
+// Filter
+// ─────────────────────────────────────────
+function setFilter(type, btn) {
+  activeTypeFilter = type;
+  document.querySelectorAll('[data-type]').forEach(b => {
+    b.classList.remove('active','active-auto','active-home','active-commercial');
+  });
+  if (type === 'all') btn.classList.add('active');
+  else btn.classList.add('active-' + type);
+  filterPolicies();
+}
+function setStatusFilter(status, btn) {
+  activeStatusFilter = status;
+  document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterPolicies();
+}
+function filterPolicies() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  filtered = allPolicies.filter(p => {
+    const matchType   = activeTypeFilter === 'all' || p.policy_type === activeTypeFilter;
+    const matchStatus = activeStatusFilter === 'all_status' ||
+      ['active','pending_renewal'].includes(p.status);
+    const matchQ = !q ||
+      p.policy_number?.toLowerCase().includes(q) ||
+      p.insurer?.toLowerCase().includes(q) ||
+      p.customer_code?.toLowerCase().includes(q) ||
+      p.clients?.full_name?.toLowerCase().includes(q);
+    return matchType && matchStatus && matchQ;
+  });
+  renderList();
+}
+function renderList() {
+  const el = document.getElementById('policy-list');
+  document.getElementById('list-count').textContent = `共 ${filtered.length} 张保单`;
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty-list"><div class="empty-list-icon">📋</div><div>没有找到匹配的保单</div></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(p => {
+    const days = Math.ceil((new Date(p.expiry_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+    let pillClass = 'pill-normal', pillLabel = `${days}天`;
+    if      (p.status === 'renewed')   { pillClass = 'pill-renewed'; pillLabel = '已续保'; }
+    else if (p.status === 'cancelled') { pillClass = 'pill-past';    pillLabel = '已取消'; }
+    else if (p.status === 'expired')   { pillClass = 'pill-past';    pillLabel = '已失效'; }
+    else if (days < 0)                 { pillClass = 'pill-past';    pillLabel = '已过期'; }
+    else if (days <= 14)               { pillClass = 'pill-urgent';  pillLabel = `${days}天`; }
+    else if (days <= 30)               { pillClass = 'pill-warning'; pillLabel = `${days}天`; }
+    const clientName = p.clients?.full_name || p.customer_code;
+    return `
+      <div class="policy-item${p.id === selectedPolicyId ? ' selected' : ''}" onclick="selectPolicy('${p.id}')">
+        <div class="policy-type-icon type-icon-${p.policy_type}">${TYPE_EMOJI[p.policy_type]||'📄'}</div>
+        <div class="policy-item-body">
+          <div class="policy-item-number">${esc(p.policy_number)}</div>
+          <div class="policy-item-client">${esc(clientName)} · ${esc(p.insurer)}</div>
+          <div class="policy-item-meta">
+            <span>${p.expiry_date}</span>
+            <span class="days-pill ${pillClass}">${pillLabel}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────
+// Select Policy → Detail
+// ─────────────────────────────────────────
+async function selectPolicy(id) {
+  selectedPolicyId = id;
+  renderList();
+  const panel = document.getElementById('detail-panel');
+  panel.innerHTML = '<div class="loading-state" style="height:200px"><span class="spinner"></span></div>';
+  try {
+    const [pRes, chRes, premRes] = await Promise.all([
+      db.from('policies').select('*, clients(full_name, phone, email)').eq('id', id).single(),
+      db.from('policy_changes').select('*').eq('policy_id', id).order('change_date', { ascending: false }),
+      db.from('policy_premiums').select('*').eq('policy_id', id).order('effective_date', { ascending: false })
+    ]);
+    if (pRes.error) throw pRes.error;
+    renderDetail(pRes.data, chRes.data || [], premRes.data || []);
+  } catch(e) {
+    panel.innerHTML = `<div class="detail-empty"><div class="detail-empty-icon">⚠️</div><div>${esc(e.message)}</div></div>`;
+  }
+}
+
+// ─────────────────────────────────────────
+// Render Detail
+// ─────────────────────────────────────────
+function renderDetail(p, changes, premiums) {
+  premiums = premiums || [];
+  const panel = document.getElementById('detail-panel');
+  const days = Math.ceil((new Date(p.expiry_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+  let daysHtml = '';
+  if      (days < 0)   daysHtml = `<span class="days-pill pill-past">已过期 ${Math.abs(days)} 天</span>`;
+  else if (days <= 14) daysHtml = `<span class="days-pill pill-urgent">距到期 ${days} 天</span>`;
+  else if (days <= 60) daysHtml = `<span class="days-pill pill-warning">距到期 ${days} 天</span>`;
+  else                 daysHtml = `<span class="days-pill pill-normal">距到期 ${days} 天</span>`;
+
+  // Determine current premium from premium history
+  const todayStr = new Date().toISOString().split('T')[0];
+  const currentPrem = premiums.find(r => r.effective_date <= todayStr && r.expiry_date > todayStr);
+  const futurePrem  = premiums.filter(r => r.effective_date > todayStr);
+  const pastPrem    = premiums.filter(r => r.expiry_date <= todayStr);
+
+  // Use historical current-period premium if available; otherwise fall back to policy's premium
+  let displayAmount, displayPayType;
+  if (premiums.length > 0) {
+    displayAmount  = currentPrem ? currentPrem.premium_amount : 0;
+    displayPayType = currentPrem ? currentPrem.payment_type : p.payment_type;
+  } else {
+    displayAmount  = p.premium_amount;
+    displayPayType = p.payment_type;
+  }
+  const premium = calcPremiumDisplay(displayAmount, displayPayType, p.policy_type, p.insurer);
+  const paymentLabel = displayPayType === 'annual' ? '年付' : displayPayType === 'monthly' ? '月付' : '';
+  const ex = p.extra_fields || {};
+
+  // Extra info block by type
+  let extraHtml = '';
+  if (p.policy_type === 'auto') {
+    const vehicle = [ex.make, ex.model, ex.year].filter(Boolean).join(' ');
+    extraHtml = `
+      <div class="info-card">
+        <div class="info-card-title">🚗 车辆信息</div>
+        ${vehicle ? `<div class="info-row"><span class="info-label">车型</span><span class="info-value">${esc(vehicle)}</span></div>` : ''}
+        ${ex.vin   ? `<div class="info-row"><span class="info-label">VIN</span><span class="info-value" style="font-family:monospace;font-size:12px">${esc(ex.vin)}</span></div>` : ''}
+        ${!vehicle && !ex.vin ? '<span class="info-empty">暂无车辆信息</span>' : ''}
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">🧑‍✈️ 驾驶员</div>
+        ${renderDriverBlock('Primary', ex.primary_driver, 'tag-primary')}
+        ${ex.secondary_driver?.name  ? renderDriverBlock('Secondary',  ex.secondary_driver,  'tag-secondary') : ''}
+        ${ex.occasional_driver?.name ? renderDriverBlock('Occasional', ex.occasional_driver, 'tag-occasional') : ''}
+        ${!ex.primary_driver?.name && !ex.secondary_driver?.name ? '<span class="info-empty">暂无驾驶员信息</span>' : ''}
+      </div>`;
+  } else if (p.policy_type === 'home') {
+    extraHtml = `
+      <div class="info-card full">
+        <div class="info-card-title">🏠 家财险信息</div>
+        ${ex.property_address ? `<div class="info-row"><span class="info-label">物业地址</span><span class="info-value">${esc(ex.property_address)}</span></div>` : ''}
+        ${ex.coverage_type    ? `<div class="info-row"><span class="info-label">保障类型</span><span class="info-value">${esc(ex.coverage_type)}</span></div>` : ''}
+        ${!ex.property_address && !ex.coverage_type ? '<span class="info-empty">暂无家财险信息</span>' : ''}
+      </div>`;
+  } else if (p.policy_type === 'commercial') {
+    extraHtml = `
+      <div class="info-card full">
+        <div class="info-card-title">🏢 商业险信息</div>
+        ${ex.business_name    ? `<div class="info-row"><span class="info-label">公司名称</span><span class="info-value">${esc(ex.business_name)}</span></div>` : ''}
+        ${ex.business_type    ? `<div class="info-row"><span class="info-label">业务类型</span><span class="info-value">${esc(ex.business_type)}</span></div>` : ''}
+        ${ex.coverage_limit   ? `<div class="info-row"><span class="info-label">保额上限</span><span class="info-value">$${Number(ex.coverage_limit).toLocaleString()} CAD</span></div>` : ''}
+        ${!ex.business_name && !ex.business_type ? '<span class="info-empty">暂无商业险信息</span>' : ''}
+      </div>`;
+  }
+
+  panel.innerHTML = `
+  <div class="detail-content">
+    <!-- Policy Header -->
+    <div class="policy-detail-header">
+      <div class="policy-header-top">
+        <div class="policy-header-left">
+          <div class="policy-big-icon type-icon-${p.policy_type}" style="width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px">${TYPE_EMOJI[p.policy_type]||'📄'}</div>
+          <div class="policy-title-block">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span class="type-badge type-${p.policy_type}">${TYPE_LABEL[p.policy_type]}</span>
+              <span class="status-badge status-${p.status}">${STATUS_LABEL[p.status]||p.status}</span>
+              ${daysHtml}
+            </div>
+            <div class="policy-number-big">${esc(p.policy_number)}</div>
+            <div class="policy-insurer-big">${esc(p.insurer)}</div>
+          </div>
+        </div>
+        <div class="policy-header-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditPolicyModal('${p.id}')">✏️ 编辑</button>
+          <button class="btn btn-accent btn-sm" onclick="openChangeModal('${p.id}','${esc(p.customer_code)}')">＋ 记录变更</button>
+        </div>
+      </div>
+      <div class="policy-meta-row">
+        <div class="policy-meta-item">
+          <span class="policy-meta-label">客户</span>
+          <span class="policy-meta-value">${esc(p.clients?.full_name || p.customer_code)}</span>
+        </div>
+        <div class="policy-meta-item">
+          <span class="policy-meta-label">客户编码</span>
+          <span class="policy-meta-value" style="font-family:monospace;font-size:14px">${esc(p.customer_code)}</span>
+        </div>
+        <div class="policy-meta-item">
+          <span class="policy-meta-label">生效日</span>
+          <span class="policy-meta-value">${p.effective_date}</span>
+        </div>
+        <div class="policy-meta-item">
+          <span class="policy-meta-label">到期日</span>
+          <span class="policy-meta-value">${p.expiry_date}</span>
+        </div>
+        <div class="policy-meta-item">
+          <span class="policy-meta-label">保费${paymentLabel ? '（' + paymentLabel + '）' : ''}</span>
+          <span class="policy-meta-value premium">${premium}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Extra Info -->
+    <div class="info-grid">
+      ${extraHtml}
+      ${p.notes ? `<div class="info-card full"><div class="info-card-title">📝 备注</div><div style="font-size:14px;line-height:1.6">${esc(p.notes)}</div></div>` : ''}
+    </div>
+
+    <!-- Premium History -->
+    ${renderPremiumHistory(premiums, futurePrem, currentPrem, pastPrem, p)}
+
+    <!-- Change History -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">🕐 变更记录 <span class="section-count">${changes.length}</span></div>
+        <button class="btn btn-ghost btn-sm" onclick="openChangeModal('${p.id}','${esc(p.customer_code)}')">＋ 新增</button>
+      </div>
+      ${changes.length === 0
+        ? `<div class="empty-list" style="padding:24px"><div class="empty-list-icon">📝</div><div>暂无变更记录</div></div>`
+        : `<div class="timeline">${changes.map(ch => `
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-top">
+              <span class="timeline-type">${esc(CHANGE_TYPE_ZH[ch.change_type] || ch.change_type)}</span>
+              <span class="timeline-date">${ch.change_date}</span>
+            </div>
+            <div class="timeline-summary">${esc(ch.summary)}</div>
+            ${ch.details ? `<div style="font-size:12px;color:var(--mid-text);margin-top:4px">${esc(ch.details)}</div>` : ''}
+          </div>`).join('')}</div>`
+      }
+    </div>
+  </div>`;
+}
+
+function renderPremiumHistory(premiums, futurePrem, currentPrem, pastPrem, policy) {
+  if (!premiums.length && !policy.premium_amount) return '';
+  const fmtCAD = v => '$' + Number(v).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const payLabel = t => t === 'annual' ? '年付' : t === 'monthly' ? '月付' : '—';
+
+  // Build sorted rows: future first, then current, then past (all by effective_date desc)
+  const allRows = [...futurePrem, ...(currentPrem ? [currentPrem] : []), ...pastPrem];
+  // Deduplicate (currentPrem is also in premiums) and sort descending
+  const seen = new Set();
+  const rows = [];
+  for (const r of allRows) {
+    if (!seen.has(r.id)) { seen.add(r.id); rows.push(r); }
+  }
+  rows.sort((a, b) => b.effective_date.localeCompare(a.effective_date));
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const tableRows = rows.map(r => {
+    const isCurrent = r.effective_date <= todayStr && r.expiry_date > todayStr;
+    const isFuture  = r.effective_date > todayStr;
+    const rowClass  = isCurrent ? 'current-period' : isFuture ? 'future-period' : '';
+    const tagHtml   = isCurrent ? '<span class="period-tag period-tag-current">当期</span>'
+                    : isFuture  ? '<span class="period-tag period-tag-future">续约</span>'
+                    :             '<span class="period-tag period-tag-past">历史</span>';
+    const premDisplay = calcPremiumDisplay(r.premium_amount, r.payment_type, policy.policy_type, policy.insurer);
+    return `<tr class="${rowClass}">
+      <td>${esc(r.effective_date)} ~ ${esc(r.expiry_date)}${tagHtml}</td>
+      <td>${premDisplay}</td>
+      <td>${payLabel(r.payment_type)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalCount = rows.length;
+  return `
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">💰 保费历史 <span class="section-count">${totalCount}</span></div>
+        <button class="btn btn-ghost btn-sm" onclick="openAddPremiumModal('${policy.id}')">＋ 补录</button>
+      </div>
+      ${totalCount === 0
+        ? '<div class="empty-list" style="padding:24px"><div class="empty-list-icon">💰</div><div>暂无保费记录</div></div>'
+        : `<div class="info-card full" style="padding:0;overflow:hidden">
+            <table class="premium-table">
+              <thead><tr><th>保期</th><th>保费</th><th>付款方式</th></tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>`
+      }
+    </div>`;
+}
+
+function renderDriverBlock(role, driver, tagClass) {
+  if (!driver || !driver.name) return '';
+  return `
+    <div class="driver-block">
+      <span class="driver-role-tag ${tagClass}">${role}</span>
+      <div class="driver-info">
+        <div class="driver-name">${esc(driver.name)}</div>
+        <div class="driver-meta">
+          ${driver.license ? `驾照：${esc(driver.license)}` : ''}
+          ${driver.dob     ? ` · 生日：${esc(driver.dob)}` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────
+// Policy Modal: Type Selector
+// ─────────────────────────────────────────
+function selectPolicyType(type, el) {
+  selectedPolicyType = type;
+  document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  ['auto','home','commercial','other'].forEach(t => {
+    const block = document.getElementById(t + '-fields');
+    if (block) {
+      block.classList.toggle('visible', t === type);
+    }
+  });
+  updateInsurerOptions();
+}
+
+// ─────────────────────────────────────────
+// Open/Close Policy Modal
+// ─────────────────────────────────────────
+function openNewPolicyModal() {
+  editingPolicyId = null;
+  expiryManuallyEdited = false;
+  document.getElementById('policy-modal-title').textContent = '新增保单';
+  document.getElementById('policy-save-btn').textContent = '保存保单';
+  document.getElementById('type-selector-wrap').style.display = '';
+  clearPolicyForm();
+  selectPolicyType('auto', document.querySelector('.type-option[data-type="auto"]'));
+  updateInsurerOptions();
+  document.getElementById('policy-modal').classList.add('open');
+}
+
+async function openEditPolicyModal(id) {
+  editingPolicyId = id;
+  expiryManuallyEdited = true; // editing existing policy — don't auto-fill expiry
+  document.getElementById('policy-modal-title').textContent = '编辑保单';
+  document.getElementById('policy-save-btn').textContent = '更新保单';
+  document.getElementById('type-selector-wrap').style.display = '';
+  clearPolicyForm();
+  try {
+    const { data, error } = await db.from('policies').select('*').eq('id', id).single();
+    if (error) throw error;
+    fillPolicyForm(data);
+    // Show correct extra fields
+    selectedPolicyType = data.policy_type;
+    document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+    const typeEl = document.querySelector(`.type-option[data-type="${data.policy_type}"]`);
+    if (typeEl) typeEl.classList.add('selected');
+    ['auto','home','commercial','other'].forEach(t => {
+      const block = document.getElementById(t + '-fields');
+      if (block) block.classList.toggle('visible', t === data.policy_type);
+    });
+    updateInsurerOptions(data.insurer);
+    document.getElementById('policy-modal').classList.add('open');
+  } catch(e) { showToast('加载失败：' + e.message, 'error'); }
+}
+
+function closePolicyModal() {
+  document.getElementById('policy-modal').classList.remove('open');
+}
+
+function clearPolicyForm() {
+  ['f-customer-code','f-policy-number','f-effective-date','f-expiry-date',
+   'f-premium','f-notes','f-make','f-model','f-year','f-vin',
+   'f-pd-name','f-pd-license','f-pd-dob','f-sd-name','f-sd-license','f-sd-dob',
+   'f-od-name','f-od-license','f-od-dob','f-property-address',
+   'f-business-name','f-business-type','f-coverage-limit'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('f-status').value = 'active';
+  document.querySelectorAll('input[name="f-payment-type"]').forEach(r => r.checked = false);
+  document.getElementById('f-coverage-type').value = '';
+  document.getElementById('f-insurer').value = '';
+  document.getElementById('client-lookup-result').textContent = '';
+  ['f-ccode-err','f-pnum-err','f-insurer-err','f-dates-err'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '';
+  });
+}
+
+function fillPolicyForm(p) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  set('f-customer-code',   p.customer_code);
+  set('f-policy-number',   p.policy_number);
+  set('f-insurer',         p.insurer);
+  set('f-effective-date',  p.effective_date);
+  set('f-expiry-date',     p.expiry_date);
+  set('f-premium',         p.premium_amount || '');
+  set('f-status',          p.status);
+  set('f-notes',           p.notes || '');
+  // Set payment_type radio
+  document.querySelectorAll('input[name="f-payment-type"]').forEach(r => r.checked = (r.value === p.payment_type));
+  document.getElementById('client-lookup-result').textContent = '';
+  const ex = p.extra_fields || {};
+  if (p.policy_type === 'auto') {
+    set('f-make',  ex.make  || ''); set('f-model', ex.model || ''); set('f-year', ex.year || ''); set('f-vin', ex.vin || '');
+    if (ex.primary_driver)   { set('f-pd-name', ex.primary_driver.name); set('f-pd-license', ex.primary_driver.license||''); set('f-pd-dob', ex.primary_driver.dob||''); }
+    if (ex.secondary_driver) { set('f-sd-name', ex.secondary_driver.name||''); set('f-sd-license', ex.secondary_driver.license||''); set('f-sd-dob', ex.secondary_driver.dob||''); }
+    if (ex.occasional_driver){ set('f-od-name', ex.occasional_driver.name||''); set('f-od-license', ex.occasional_driver.license||''); set('f-od-dob', ex.occasional_driver.dob||''); }
+  } else if (p.policy_type === 'home') {
+    set('f-property-address', ex.property_address||''); set('f-coverage-type', ex.coverage_type||'');
+  } else if (p.policy_type === 'commercial') {
+    set('f-business-name', ex.business_name||''); set('f-business-type', ex.business_type||''); set('f-coverage-limit', ex.coverage_limit||'');
+  }
+}
+
+// Live client lookup
+let lookupTimer = null;
+async function lookupClient() {
+  const code = document.getElementById('f-customer-code').value.trim().toUpperCase();
+  const result = document.getElementById('client-lookup-result');
+  clearTimeout(lookupTimer);
+  if (!/^[A-Z]{4}[0-9]{2}$/.test(code)) { result.textContent = ''; result.style.color = ''; return; }
+  lookupTimer = setTimeout(async () => {
+    try {
+      const { data } = await db.from('clients').select('full_name, birthday').eq('customer_code', code).single();
+      if (data) {
+        result.textContent = '✓ ' + data.full_name; result.style.color = 'var(--green)';
+        // Auto-fill primary driver for new auto policies
+        if (!editingPolicyId && selectedPolicyType === 'auto') {
+          const pdName = document.getElementById('f-pd-name');
+          const pdDob  = document.getElementById('f-pd-dob');
+          if (pdName && !pdName.value) pdName.value = data.full_name || '';
+          if (pdDob  && !pdDob.value)  pdDob.value  = data.birthday || '';
+        }
+      }
+      else { result.textContent = '找不到此客户编码'; result.style.color = 'var(--red)'; }
+    } catch { result.textContent = '找不到此客户编码'; result.style.color = 'var(--red)'; }
+  }, 400);
+}
+
+// ─────────────────────────────────────────
+// Save Policy
+// ─────────────────────────────────────────
+async function savePolicy() {
+  let valid = true;
+  const clear = id => { const e = document.getElementById(id); if (e) e.textContent = ''; };
+  ['f-ccode-err','f-pnum-err','f-insurer-err','f-dates-err'].forEach(clear);
+
+  const code     = document.getElementById('f-customer-code').value.trim().toUpperCase();
+  const pnum     = document.getElementById('f-policy-number').value.trim();
+  const insurer  = document.getElementById('f-insurer').value.trim();
+  const effDate  = document.getElementById('f-effective-date').value;
+  const expDate  = document.getElementById('f-expiry-date').value;
+
+  if (!editingPolicyId && !/^[A-Z]{4}[0-9]{2}$/.test(code)) {
+    document.getElementById('f-ccode-err').textContent = '请输入有效的客户编码'; valid = false;
+  }
+  if (!pnum)    { document.getElementById('f-pnum-err').textContent = '保单号为必填项'; valid = false; }
+  if (!insurer) { document.getElementById('f-insurer-err').textContent = '保险公司为必填项'; valid = false; }
+  if (!effDate || !expDate) { document.getElementById('f-dates-err').textContent = '生效日和到期日均为必填'; valid = false; }
+  else if (expDate <= effDate) { document.getElementById('f-dates-err').textContent = '到期日必须晚于生效日'; valid = false; }
+  if (!valid) return;
+
+  // Build extra_fields
+  let extra_fields = {};
+  const type = editingPolicyId ? selectedPolicyType : selectedPolicyType;
+  if (type === 'auto') {
+    const g = id => document.getElementById(id)?.value?.trim() || null;
+    extra_fields = {
+      make:  g('f-make'), model: g('f-model'),
+      year:  document.getElementById('f-year').value ? parseInt(document.getElementById('f-year').value) : null,
+      vin:   g('f-vin'),
+      primary_driver:    g('f-pd-name') ? { name: g('f-pd-name'), license: g('f-pd-license'), dob: g('f-pd-dob') } : null,
+      secondary_driver:  g('f-sd-name') ? { name: g('f-sd-name'), license: g('f-sd-license'), dob: g('f-sd-dob') } : null,
+      occasional_driver: g('f-od-name') ? { name: g('f-od-name'), license: g('f-od-license'), dob: g('f-od-dob') } : null,
+    };
+  } else if (type === 'home') {
+    extra_fields = {
+      property_address: document.getElementById('f-property-address').value.trim() || null,
+      coverage_type:    document.getElementById('f-coverage-type').value || null,
+    };
+  } else if (type === 'commercial') {
+    extra_fields = {
+      business_name:  document.getElementById('f-business-name').value.trim() || null,
+      business_type:  document.getElementById('f-business-type').value.trim() || null,
+      coverage_limit: document.getElementById('f-coverage-limit').value ? Number(document.getElementById('f-coverage-limit').value) : null,
+    };
+  }
+
+  const premRaw = document.getElementById('f-premium').value;
+  const paymentRadio = document.querySelector('input[name="f-payment-type"]:checked');
+  const payload = {
+    policy_number:   pnum,
+    insurer:         insurer,
+    effective_date:  effDate,
+    expiry_date:     expDate,
+    premium_amount:  premRaw ? parseFloat(premRaw) : null,
+    payment_type:    paymentRadio ? paymentRadio.value : null,
+    status:          document.getElementById('f-status').value,
+    extra_fields:    extra_fields,
+    notes:           document.getElementById('f-notes').value.trim() || null,
+  };
+  if (!editingPolicyId) {
+    payload.customer_code = code;
+  }
+  payload.policy_type = type;
+
+  const btn = document.getElementById('policy-save-btn');
+  btn.textContent = '保存中…'; btn.disabled = true;
+  try {
+    let error, data;
+    if (editingPolicyId) {
+      ({ error, data } = await db.from('policies').update(payload).eq('id', editingPolicyId).select().single());
+    } else {
+      ({ error, data } = await db.from('policies').insert(payload).select().single());
+    }
+    if (error) throw error;
+
+    // Upsert premium record for this policy period
+    if (payload.premium_amount && payload.effective_date && payload.expiry_date) {
+      // Check if a premium record already exists for this exact period
+      const { data: existingPrem } = await db.from('policy_premiums')
+        .select('id')
+        .eq('policy_id', data.id)
+        .eq('effective_date', payload.effective_date)
+        .eq('expiry_date', payload.expiry_date)
+        .maybeSingle();
+
+      if (existingPrem) {
+        await db.from('policy_premiums').update({
+          premium_amount: payload.premium_amount,
+          payment_type:   payload.payment_type || null,
+        }).eq('id', existingPrem.id);
+      } else {
+        await db.from('policy_premiums').insert({
+          policy_id:      data.id,
+          effective_date: payload.effective_date,
+          expiry_date:    payload.expiry_date,
+          premium_amount: payload.premium_amount,
+          payment_type:   payload.payment_type || null,
+        });
+      }
+    }
+
+    closePolicyModal();
+    showToast(editingPolicyId ? '保单已更新 ✓' : '保单已创建 ✓', 'success');
+    await loadPolicies();
+    selectPolicy(data.id);
+  } catch(e) {
+    showToast('保存失败：' + e.message, 'error');
+  } finally {
+    btn.textContent = editingPolicyId ? '更新保单' : '保存保单';
+    btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────
+// Change Modal
+// ─────────────────────────────────────────
+function openChangeModal(policyId, custCode) {
+  changePolicyId  = policyId;
+  changeCustCode  = custCode;
+  document.getElementById('c-change-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('c-summary').value  = '';
+  document.getElementById('c-details').value  = '';
+  document.getElementById('c-summary-err').textContent = '';
+  document.getElementById('change-modal').classList.add('open');
+}
+function closeChangeModal() {
+  document.getElementById('change-modal').classList.remove('open');
+}
+
+async function saveChange() {
+  const summary = document.getElementById('c-summary').value.trim();
+  const errEl   = document.getElementById('c-summary-err');
+  if (!summary) { errEl.textContent = '变更摘要为必填项'; return; }
+  errEl.textContent = '';
+
+  const changeType = document.getElementById('c-change-type').value;
+  const btn = document.getElementById('change-save-btn');
+  btn.textContent = '保存中…'; btn.disabled = true;
+
+  try {
+    // 1. Save change record
+    const { error } = await db.from('policy_changes').insert({
+      policy_id:     changePolicyId,
+      customer_code: changeCustCode,
+      change_type:   changeType,
+      change_date:   document.getElementById('c-change-date').value,
+      summary:       summary,
+      details:       document.getElementById('c-details').value.trim() || null,
+    });
+    if (error) throw error;
+
+    // 2. Get policy info for task description
+    const pol = allPolicies.find(p => p.id === changePolicyId);
+    const insurer  = pol?.insurer || '';
+    const polType  = pol?.policy_type || '';
+    const policyNumber = pol?.policy_number || '';
+    const changeLabel = CHANGE_TYPE_ZH[changeType] || changeType;
+
+    // 3. Create 3-step change workflow tasks (出单 → 签字 → 录单)
+    const workflowId = crypto.randomUUID();
+    const now = new Date();
+    const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r.toISOString().split('T')[0]; };
+
+    const base = {
+      customer_code: changeCustCode,
+      policy_id:     changePolicyId,
+      task_type:     'change_workflow',
+      workflow_id:   workflowId,
+      policy_type:   polType,
+      change_type:   changeType,
+      description:   `${changeLabel}：${summary}（${insurer} ${policyNumber}）`,
+    };
+
+    const tasks = [
+      { ...base, title: `[变更] 出单 — ${changeLabel}（${insurer}）`, status: 'pending_issue', due_date: addDays(now, 1) },
+      { ...base, title: `[变更] 签字 — ${changeLabel}（${insurer}）`, status: 'pending_sign',  due_date: addDays(now, 3) },
+      { ...base, title: `[变更] 录单 — ${changeLabel}（${insurer}）`, status: 'pending_entry', due_date: addDays(now, 5) },
+    ];
+
+    const { error: taskErr } = await db.from('tasks').insert(tasks);
+    if (taskErr) console.warn('创建变更流程任务失败：', taskErr.message);
+
+    closeChangeModal();
+    const taskMsg = !taskErr ? '，已创建出单→签字→录单任务' : '';
+    showToast(`变更记录已保存${taskMsg} ✓`, 'success');
+    selectPolicy(changePolicyId); // reload detail
+  } catch(e) {
+    showToast('保存失败：' + e.message, 'error');
+  } finally {
+    btn.textContent = '记录变更'; btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────
+// Add Premium Modal
+// ─────────────────────────────────────────
+let addPremiumPolicyId = null;
+function openAddPremiumModal(policyId) {
+  addPremiumPolicyId = policyId;
+  document.getElementById('ap-eff-date').value = '';
+  document.getElementById('ap-exp-date').value = '';
+  document.getElementById('ap-premium').value = '';
+  document.getElementById('ap-payment-type').value = '';
+  document.getElementById('ap-err').textContent = '';
+  document.getElementById('add-premium-modal').classList.add('open');
+}
+function closeAddPremiumModal() {
+  document.getElementById('add-premium-modal').classList.remove('open');
+}
+async function saveAddPremium() {
+  const effDate = document.getElementById('ap-eff-date').value;
+  const expDate = document.getElementById('ap-exp-date').value;
+  const amount  = document.getElementById('ap-premium').value;
+  const payType = document.getElementById('ap-payment-type').value || null;
+  const errEl   = document.getElementById('ap-err');
+
+  if (!effDate || !expDate) { errEl.textContent = '请填写保期开始日和结束日'; return; }
+  if (expDate <= effDate)   { errEl.textContent = '结束日必须晚于开始日'; return; }
+  if (!amount || Number(amount) < 0) { errEl.textContent = '请填写有效的保费金额'; return; }
+  errEl.textContent = '';
+
+  const btn = document.getElementById('ap-save-btn');
+  btn.textContent = '保存中…'; btn.disabled = true;
+  try {
+    const { error } = await db.from('policy_premiums').insert({
+      policy_id:      addPremiumPolicyId,
+      effective_date: effDate,
+      expiry_date:    expDate,
+      premium_amount: parseFloat(amount),
+      payment_type:   payType,
+    });
+    if (error) throw error;
+    closeAddPremiumModal();
+    showToast('保费记录已保存 ✓', 'success');
+    selectPolicy(addPremiumPolicyId);
+  } catch(e) {
+    showToast('保存失败：' + e.message, 'error');
+  } finally {
+    btn.textContent = '保存'; btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────
+function esc(str) {
+  if (!str && str !== 0) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Safe-close: confirm before discarding modal data
+function safeCloseModal(modalId) {
+  if (!confirm('确定要关闭吗？未保存的内容将丢失。')) return;
+  document.getElementById(modalId).classList.remove('open');
+}
+
+// Close modals on backdrop click (with confirmation)
+['policy-modal','change-modal','add-premium-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) safeCloseModal(id);
+  });
+});
+</script>
+<script src="ams_i18n.js"></script>
+</body>
+</html>

@@ -18,3 +18,10 @@ desktop.ini
 # Lock files
 *.lock
 ~$*
+
+# Service manager state and logs
+.service-manager/
+
+# Service manager exe build artifacts
+service-monitor.exe
+sea-prep.blob

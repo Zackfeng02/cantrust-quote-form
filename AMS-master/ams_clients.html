@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMS · Clients</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ams_i18n.js"></script>
+<script src="ams_bootstrap.js"></script>
+<style>
+/* ── Reset & Variables ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:       #0d1b2a;
+  --navy-mid:   #152336;
+  --navy-light: #1e3450;
+  --navy-hover: #243d5e;
+  --accent:     #e8a020;
+  --accent-dim: #c4851a;
+  --red:        #e05252;
+  --green:      #3fc98b;
+  --blue:       #4a9edd;
+  --text-1:     #f0f4f8;
+  --text-2:     #a8bcd0;
+  --text-3:     #607a93;
+  --border:     rgba(255,255,255,0.07);
+  --card-bg:    #ffffff;
+  --page-bg:    #f0f4f8;
+  --card-border:#e2e8f0;
+  --dark-text:  #1a2e42;
+  --mid-text:   #4a6478;
+}
+body { font-family: 'Outfit', sans-serif; background: var(--page-bg); color: var(--dark-text); min-height: 100vh; display: flex; overflow-x: hidden; }
+
+/* ── Sidebar ── */
+.sidebar { width: 240px; min-height: 100vh; background: var(--navy); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; border-right: 1px solid var(--border); }
+.sidebar-logo { padding: 28px 24px 24px; border-bottom: 1px solid var(--border); }
+.logo-mark { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--text-1); letter-spacing: -0.5px; }
+.logo-mark span { color: var(--accent); }
+.logo-sub { font-size: 11px; color: var(--text-3); margin-top: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
+.sidebar-nav { flex: 1; padding: 16px 12px; }
+.nav-section-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px 4px; margin-top: 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--text-2); font-size: 14px; font-weight: 400; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; text-decoration: none; }
+.nav-item:hover { background: var(--navy-hover); color: var(--text-1); }
+.nav-item.active { background: var(--navy-light); color: var(--text-1); font-weight: 500; }
+.nav-item.active .nav-icon { color: var(--accent); }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--navy-mid); }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--navy); flex-shrink: 0; }
+.user-name { font-size: 13px; color: var(--text-1); font-weight: 500; }
+.user-role { font-size: 11px; color: var(--text-3); }
+
+.lang-toggle{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:8px;color:var(--text-2);font-size:13px}
+.lang-toggle:hover{background:rgba(255,255,255,.06);color:var(--text-1)}
+.lang-icon{font-size:16px}
+.lang-label{font-weight:600;letter-spacing:.5px}
+
+/* ── Hamburger (mobile) ── */
+.hamburger { display: none; background: none; border: none; color: var(--text-1); font-size: 22px; cursor: pointer; padding: 8px; }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+.sidebar-overlay.open { display: block; }
+
+/* ── Main ── */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: var(--card-bg); border-bottom: 1px solid var(--card-border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: 'Outfit', sans-serif; }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy-light); }
+.btn-ghost { background: transparent; color: var(--mid-text); border: 1px solid var(--card-border); }
+.btn-ghost:hover { background: var(--page-bg); }
+.btn-danger { background: #fff0f0; color: var(--red); border: 1px solid #ffd5d5; }
+.btn-danger:hover { background: #ffe0e0; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* ── More Menu ── */
+.more-menu-wrap { position: relative; }
+.more-menu { position: absolute; right: 0; top: calc(100% + 8px); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); min-width: 160px; z-index: 200; display: none; }
+.more-menu.open { display: block; }
+.more-menu-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 13px; color: var(--dark-text); cursor: pointer; transition: background 0.12s; }
+.more-menu-item:hover { background: var(--page-bg); }
+.more-menu-item:first-child { border-radius: 10px 10px 0 0; }
+.more-menu-item:last-child { border-radius: 0 0 10px 10px; }
+
+/* ── Content ── */
+.content { padding: 24px 32px; flex: 1; }
+
+/* ── Toolbar ── */
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-input { width: 100%; padding: 9px 12px 9px 36px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; font-family: 'Outfit', sans-serif; background: var(--card-bg); color: var(--dark-text); outline: none; transition: border-color 0.15s; }
+.search-input:focus { border-color: var(--accent); }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--mid-text); pointer-events: none; }
+.filter-btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--mid-text); transition: all 0.12s; font-family: 'Outfit', sans-serif; white-space: nowrap; }
+.filter-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* ── Table ── */
+.table-wrap { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
+.table-meta { padding: 12px 20px; font-size: 12px; color: var(--mid-text); border-bottom: 1px solid var(--card-border); }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-text); border-bottom: 1px solid var(--card-border); background: #fafbfc; }
+tbody tr { border-bottom: 1px solid #f5f7fa; transition: background 0.1s; cursor: pointer; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #f8faff; }
+tbody td { padding: 12px 16px; font-size: 13px; color: var(--dark-text); }
+.td-code { font-family: monospace; font-size: 12px; color: var(--mid-text); }
+.td-name { font-weight: 500; }
+.td-secondary { color: var(--mid-text); font-size: 12px; }
+.client-avatar-sm { width: 32px; height: 32px; border-radius: 8px; background: var(--navy); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; flex-shrink: 0; vertical-align: middle; margin-right: 8px; }
+.client-avatar-sm.commercial { background: #4a2d7a; }
+
+/* ── Badges ── */
+.renewal-badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.renewal-urgent  { background: #fff0f0; color: var(--red); border: 1px solid #ffd5d5; }
+.renewal-warning { background: #fff8e8; color: #b06000; border: 1px solid #ffd580; }
+.tasks-badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; background: #e8f4ff; color: #1a6baa; }
+
+/* ── Empty / Loading ── */
+.table-empty { padding: 48px 20px; text-align: center; color: var(--mid-text); }
+.table-empty-icon { font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px; }
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--card-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-row td { padding: 32px; text-align: center; color: var(--mid-text); }
+
+/* ── Sentinel (infinite scroll) ── */
+#scroll-sentinel { height: 1px; }
+.load-more-indicator { text-align: center; padding: 16px; color: var(--mid-text); font-size: 13px; display: none; }
+.load-more-indicator.visible { display: block; }
+
+/* ── Modals ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.6); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--card-bg); border-radius: 16px; width: 620px; max-width: 96vw; max-height: 90vh; overflow-y: auto; transform: translateY(12px); transition: transform 0.2s; box-shadow: 0 24px 64px rgba(0,0,0,0.2); }
+.modal-overlay.open .modal { transform: none; }
+.modal-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--card-bg); z-index: 1; }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--mid-text); padding: 4px; border-radius: 4px; }
+.modal-close:hover { color: var(--dark-text); background: var(--page-bg); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--card-border); display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ── Form ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--mid-text); }
+.form-label .req { color: var(--red); margin-left: 2px; }
+.form-input, .form-select, .form-textarea { padding: 9px 12px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px; font-family: 'Outfit', sans-serif; color: var(--dark-text); background: #fff; outline: none; transition: border-color 0.15s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-hint { font-size: 11px; color: var(--mid-text); }
+.form-error { color: var(--red); font-size: 12px; }
+.form-section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--dark-text); margin: 20px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--card-border); grid-column: 1 / -1; }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; background: var(--navy); color: var(--text-1); padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.2); transform: translateY(80px); opacity: 0; transition: all 0.25s; }
+.toast.show { transform: none; opacity: 1; }
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+
+/* ── Config screen ── */
+#config-screen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.config-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 440px; max-width: 90vw; }
+.config-logo { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+.config-logo span { color: var(--accent); }
+.config-sub { font-size: 13px; color: var(--text-3); margin-bottom: 28px; }
+.config-field { margin-bottom: 16px; }
+.config-label { font-size: 12px; color: var(--text-2); margin-bottom: 6px; font-weight: 500; display: block; }
+.config-input { width: 100%; background: var(--navy); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text-1); font-size: 13px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.15s; }
+.config-input:focus { border-color: var(--accent); }
+.config-btn { width: 100%; padding: 12px; background: var(--accent); color: var(--navy); border: none; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; margin-top: 8px; }
+.config-btn:hover { background: var(--accent-dim); }
+.config-error { color: #ff7070; font-size: 12px; margin-top: 10px; display: none; }
+
+/* ── Clickable name link ── */
+.td-name-link { text-decoration: none; color: inherit; display: inline-flex; align-items: center; }
+.td-name-link:hover .td-name { color: var(--blue); text-decoration: underline; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); transition: transform 0.25s; }
+  .sidebar.open { transform: none; }
+  .main { margin-left: 0; }
+  .hamburger { display: block; }
+  .topbar { padding: 0 16px; }
+  .content { padding: 16px; }
+  .desktop-only { display: none; }
+  thead th:nth-child(3), thead th:nth-child(4), tbody td:nth-child(3), tbody td:nth-child(4) { display: none; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Config screen -->
+<div id="config-screen">
+  <div class="config-card">
+    <div class="config-logo">AMS<span>·</span></div>
+    <div class="config-sub" data-i18n="cfg_sub">Enter your Supabase credentials</div>
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_url_label">Project URL</label>
+      <input class="config-input" id="cfg-url" type="text" placeholder="https://xxxxxxxxxx.supabase.co">
+    </div>
+    <div class="config-field">
+      <label class="config-label" data-i18n="cfg_key_label">Anon Public Key</label>
+      <input class="config-input" id="cfg-key" type="password" placeholder="eyJ...">
+    </div>
+    <button class="config-btn" onclick="connectSupabase()" data-i18n="cfg_connect">Connect</button>
+    <div class="config-error" id="cfg-error"></div>
+  </div>
+</div>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AMS<span>·</span></div>
+    <div class="logo-sub">Insurance Manager</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-i18n="nav_main">主菜单</div>
+    <a class="nav-item" href="ams_dashboard.html"><span class="nav-icon">⊞</span><span class="nav-label" data-i18n="nav_dashboard">仪表盘</span></a>
+    <a class="nav-item active" href="ams_clients.html"><span class="nav-icon">👤</span><span class="nav-label" data-i18n="nav_clients">客户管理</span></a>
+    <a class="nav-item" href="ams_policies.html"><span class="nav-icon">📋</span><span class="nav-label" data-i18n="nav_policies">保单管理</span></a>
+    <a class="nav-item" href="ams_tasks.html"><span class="nav-icon">✓</span><span class="nav-label" data-i18n="nav_tasks">待办任务</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_business">业务</div>
+    <a class="nav-item" href="ams_quotes.html"><span class="nav-icon">💲</span><span class="nav-label" data-i18n="nav_quotes">新客户报价</span></a>
+    <a class="nav-item" href="ams_import_quote.html"><span class="nav-icon">📥</span><span class="nav-label" data-i18n="nav_import">报价导入</span></a>
+    <a class="nav-item" href="ams_renewal.html"><span class="nav-icon">🔄</span><span class="nav-label" data-i18n="nav_renewal">续保对比</span></a>
+    <div class="nav-section-label" style="margin-top:16px" data-i18n="nav_records">记录</div>
+    <a class="nav-item" href="ams_changes.html"><span class="nav-icon">📝</span><span class="nav-label" data-i18n="nav_changes">变更记录</span></a>
+    <a class="nav-item" href="ams_reports.html"><span class="nav-icon">📊</span><span class="nav-label" data-i18n="nav_reports">报表</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="lang-toggle" onclick="toggleLang()" title="Switch Language">
+      <span class="lang-icon">🌐</span>
+      <span class="lang-label" id="lang-label">EN</span>
+    </div>
+    <div class="user-chip">
+      <div class="user-avatar">A</div>
+      <div><div class="user-name" data-i18n="user_name">独立经纪人</div><div class="user-role">Administrator</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="openSidebar()">☰</button>
+      <div class="topbar-title" data-i18n="page_title">客户管理</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-primary desktop-only" onclick="openNewClientModal()" data-i18n="btn_new_client">＋ 新增客户</button>
+      <button class="btn btn-ghost desktop-only" onclick="exportCSV()" data-i18n="btn_export">↓ 导出</button>
+      <button class="btn btn-ghost desktop-only" onclick="document.getElementById('csv-file').click()" data-i18n="btn_import">↑ 导入</button>
+      <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSVFile(event)">
+      <!-- Mobile more menu -->
+      <div class="more-menu-wrap">
+        <button class="btn btn-ghost" id="more-btn" onclick="toggleMoreMenu()" style="display:none">⋯</button>
+        <div class="more-menu" id="more-menu">
+          <div class="more-menu-item" onclick="openNewClientModal();toggleMoreMenu()" data-i18n="btn_new_client">＋ 新增客户</div>
+          <div class="more-menu-item" onclick="exportCSV();toggleMoreMenu()" data-i18n="menu_export_csv">↓ 导出 CSV</div>
+          <div class="more-menu-item" onclick="document.getElementById('csv-file').click();toggleMoreMenu()" data-i18n="menu_import_csv">↑ 导入 CSV</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="search-input" type="text" data-i18n-ph="search_placeholder" placeholder="搜索姓名、编号、电话、保单号…">
+      </div>
+      <button class="filter-btn active" id="filter-all" onclick="setFilter('all')" data-i18n="filter_all">全部</button>
+      <button class="filter-btn" id="filter-renewal" onclick="setFilter('renewal')" data-i18n="filter_renewal">即将续保</button>
+      <button class="filter-btn" id="filter-tasks" onclick="setFilter('tasks')" data-i18n="filter_tasks">待办任务</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-meta" id="table-meta"></div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="th_name">姓名</th>
+            <th data-i18n="th_code">编号</th>
+            <th data-i18n="th_phone">电话</th>
+            <th data-i18n="th_email">邮箱</th>
+            <th data-i18n="th_renewal">续保</th>
+            <th data-i18n="th_tasks">任务</th>
+          </tr>
+        </thead>
+        <tbody id="client-tbody">
+          <tr class="loading-row"><td colspan="6"><span class="spinner"></span> <span data-i18n="loading">加载中…</span></td></tr>
+        </tbody>
+      </table>
+      <div id="scroll-sentinel"></div>
+      <div class="load-more-indicator" id="load-more-indicator"><span class="spinner"></span> <span data-i18n="loading_more">加载更多…</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- New/Edit Client Modal -->
+<div class="modal-overlay" id="client-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title" data-i18n="modal_new_client">新增客户</div>
+      <button class="modal-close" onclick="safeCloseClientModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-section-title" data-i18n="section_basic">基本信息</div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_code">客户编号<span class="req">*</span></label>
+          <input class="form-input" id="f-code" type="text" data-i18n-ph="ph_code" placeholder="ABCD01" maxlength="6" style="text-transform:uppercase">
+          <span class="form-hint" data-i18n="hint_code">4位大写字母 + 2位数字</span>
+          <span class="form-error" id="f-code-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_type">类型<span class="req">*</span></label>
+          <select class="form-select" id="f-type" onchange="toggleClientNameFields()">
+            <option value="individual" data-i18n="type_individual">个人</option>
+            <option value="corporation" data-i18n="type_corporation">企业</option>
+          </select>
+        </div>
+        <div class="form-group" style="display:none"><span id="f-name"></span></div>
+        <div id="name-fields-individual" style="display:contents">
+          <div class="form-group">
+            <label class="form-label" data-i18n="label_firstname">名<span class="req">*</span></label>
+            <input class="form-input" id="f-firstname" type="text" data-i18n-ph="ph_firstname" placeholder="John">
+            <span class="form-error" id="f-name-err"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="label_lastname">姓<span class="req">*</span></label>
+            <input class="form-input" id="f-lastname" type="text" data-i18n-ph="ph_lastname" placeholder="Smith">
+            <span class="form-error" id="f-lastname-err"></span>
+          </div>
+          <div class="form-group full">
+            <label class="form-label" data-i18n="label_middlename">中间名</label>
+            <input class="form-input" id="f-middlename" type="text" data-i18n-ph="ph_middlename" placeholder="(可选)">
+          </div>
+        </div>
+        <div id="name-fields-corporation" style="display:none">
+          <div class="form-group full">
+            <label class="form-label" data-i18n="label_businessname">企业名称<span class="req">*</span></label>
+            <input class="form-input" id="f-businessname" type="text" data-i18n-ph="ph_businessname" placeholder="ABC Trading Inc.">
+            <span class="form-error" id="f-businessname-err"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_birthday">生日</label>
+          <input class="form-input" id="f-birthday" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_phone">电话</label>
+          <input class="form-input" id="f-phone" type="tel" placeholder="416-555-0101">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="label_email">邮箱</label>
+          <input class="form-input" id="f-email" type="email">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="label_address">地址</label>
+          <input class="form-input" id="f-address" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_referral">推荐来源</label>
+          <input class="form-input" id="f-referral" type="text" data-i18n-ph="ph_referral" placeholder="朋友 / 广告 / 网站">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label_tags">标签</label>
+          <input class="form-input" id="f-tags" type="text" data-i18n-ph="ph_tags" placeholder="VIP, 推荐来源">
+          <span class="form-hint" data-i18n="hint_tags">逗号分隔</span>
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="label_notes">备注</label>
+          <textarea class="form-textarea" id="f-notes" data-i18n-ph="ph_notes" placeholder="任何附加说明…"></textarea>
+        </div>
+        <div class="form-section-title" data-i18n="section_contact1">联系人 1（可选）</div>
+        <div class="form-group"><label class="form-label" data-i18n="label_title">称谓</label><select class="form-select" id="c1-title"><option value="">—</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Dr.</option></select></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_contact_name">姓名</label><input class="form-input" id="c1-name" type="text"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_phone">电话</label><input class="form-input" id="c1-phone" type="tel"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_email">邮箱</label><input class="form-input" id="c1-email" type="email"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_birthday">生日</label><input class="form-input" id="c1-birthday" type="date"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_marital">婚姻状况</label><select class="form-select" id="c1-marital"><option value="">—</option><option value="single" data-i18n="marital_single">单身</option><option value="married" data-i18n="marital_married">已婚</option><option value="divorced" data-i18n="marital_divorced">离异</option><option value="widowed" data-i18n="marital_widowed">ɥż</option></select></div>
+        <div class="form-group full"><label class="form-label" data-i18n="label_relation">关系</label><input class="form-input" id="c1-relation" type="text" data-i18n-ph="ph_relation" placeholder="配偶 / 父母 / 子女"></div>
+        <div class="form-section-title" data-i18n="section_contact2">联系人 2（可选）</div>
+        <div class="form-group"><label class="form-label" data-i18n="label_title">称谓</label><select class="form-select" id="c2-title"><option value="">—</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Dr.</option></select></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_contact_name">姓名</label><input class="form-input" id="c2-name" type="text"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_phone">电话</label><input class="form-input" id="c2-phone" type="tel"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_email">邮箱</label><input class="form-input" id="c2-email" type="email"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_birthday">生日</label><input class="form-input" id="c2-birthday" type="date"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label_marital">婚姻状况</label><select class="form-select" id="c2-marital"><option value="">—</option><option value="single" data-i18n="marital_single">单身</option><option value="married" data-i18n="marital_married">已婚</option><option value="divorced" data-i18n="marital_divorced">离异</option><option value="widowed" data-i18n="marital_widowed">ɥż</option></select></div>
+        <div class="form-group full"><label class="form-label" data-i18n="label_relation">关系</label><input class="form-input" id="c2-relation" type="text" data-i18n-ph="ph_relation" placeholder="配偶 / 父母 / 子女"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseClientModal()" data-i18n="btn_cancel">取消</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="saveClient()" data-i18n="btn_save_client">保存客户</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV Import Modal -->
+<div class="modal-overlay" id="csv-modal">
+  <div class="modal" style="width:700px">
+    <div class="modal-header">
+      <div class="modal-title" data-i18n="modal_import_csv">导入 CSV</div>
+      <button class="modal-close" onclick="safeCloseCSVModal()">✕</button>
+    </div>
+    <div class="modal-body" id="csv-modal-body">
+      <!-- Populated by JS -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="safeCloseCSVModal()" data-i18n="btn_cancel">取消</button>
+      <button class="btn btn-primary" id="csv-confirm-btn" onclick="runCSVImport()" disabled data-i18n="btn_confirm_import">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// I18N
+// ════════════════════════════════════════
+const CLIENTS_I18N_FALLBACK = {
+  zh: {
+    // Nav (shared)
+    nav_main:'主菜单', nav_dashboard:'仪表盘', nav_clients:'客户管理', nav_policies:'保单管理',
+    nav_tasks:'待办任务', nav_business:'业务', nav_quotes:'新客户报价', nav_import:'报价导入',
+    nav_renewal:'续保对比', nav_records:'记录', nav_changes:'变更记录', nav_reports:'报表',
+    user_name:'独立经纪人',
+    // Config screen
+    cfg_sub:'输入您的 Supabase ƾ֤', cfg_url_label:'项目 URL', cfg_key_label:'Anon 公钥',
+    cfg_connect:'连接', cfg_err_missing:'请输入项目 URL 和 Anon Key',
+    cfg_err_failed:'连接失败：{msg}',
+    // Page
+    page_title:'客户管理',
+    btn_new_client:'＋ 新增客户', btn_export:'↓ 导出', btn_import:'↑ 导入',
+    menu_export_csv:'↓ 导出 CSV', menu_import_csv:'↑ 导入 CSV',
+    // Toolbar
+    search_placeholder:'搜索姓名、编号、电话、保单号…',
+    filter_all:'全部', filter_renewal:'即将续保', filter_tasks:'待办任务',
+    // Table headers
+    th_name:'姓名', th_code:'编号', th_phone:'电话', th_email:'邮箱',
+    th_renewal:'续保', th_tasks:'任务',
+    // Table content
+    loading:'加载中…', loading_more:'加载更多…',
+    table_meta:'{count} 位客户', table_meta_one:'1 位客户',
+    renews_in:'还有 {days} 天续保',
+    task_count:'{count} 个任务',
+    empty_no_clients:'暂无客户。',
+    empty_add_first:'添加第一个客户',
+    empty_or:'或',
+    empty_import_csv:'导入 CSV',
+    empty_no_match:'没有匹配的客户。',
+    empty_clear_filters:'清除筛选',
+    // Client modal
+    modal_new_client:'新增客户', modal_edit_client:'编辑客户',
+    section_basic:'基本信息',
+    label_code:'客户编号', label_type:'类型',
+    type_individual:'个人', type_corporation:'企业',
+    label_firstname:'名', label_lastname:'姓', label_middlename:'中间名',
+    label_businessname:'企业名称',
+    label_birthday:'生日', label_phone:'电话', label_email:'邮箱',
+    label_address:'地址', label_referral:'推荐来源',
+    label_tags:'标签', label_notes:'备注',
+    label_title:'称谓', label_contact_name:'姓名', label_marital:'婚姻状况',
+    label_relation:'关系',
+    marital_single:'单身', marital_married:'已婚', marital_divorced:'离异', marital_widowed:'ɥż',
+    hint_code:'4位大写字母 + 2位数字', hint_tags:'逗号分隔',
+    ph_code:'ABCD01', ph_firstname:'John', ph_lastname:'Smith', ph_middlename:'(可选)',
+    ph_businessname:'ABC Trading Inc.', ph_referral:'朋友 / 广告 / 网站',
+    ph_tags:'VIP, 推荐来源', ph_notes:'任何附加说明…', ph_relation:'配偶 / 父母 / 子女',
+    btn_cancel:'取消', btn_save_client:'保存客户', btn_saving:'保存中…',
+    // Validation
+    err_code_format:'必填：4位大写字母 + 2位数字（如 ABCD01）',
+    err_firstname_required:'名是必填项', err_lastname_required:'姓是必填项',
+    err_businessname_required:'企业名称是必填项',
+    // Toast messages
+    toast_client_added:'客户已添加', toast_client_updated:'客户已更新',
+    toast_exported:'已导出 {count} 位客户',
+    toast_import_complete:'导入完成：{added} 新增，{updated} 更新，{skipped} 跳过',
+    toast_csv_only:'请选择 .csv 文件', toast_file_too_large:'文件过大（最大 1MB）',
+    toast_csv_min_rows:'CSV 必须有表头行和至少一行数据',
+    // Confirm
+    confirm_close:'确定要关闭吗？未保存的内容将丢失。',
+    // CSV modal
+    modal_import_csv:'导入 CSV', btn_confirm_import:'确认导入', btn_importing:'导入中…',
+    csv_rows_found:'{count} 行数据。显示前 5 行。',
+    csv_column_mapping:'列映射', csv_skip:'— 跳过 —',
+    csv_code_warning:'预览中发现无效的客户编号格式：{codes}（应为 ABCD01 格式）',
+    // CSV field labels
+    csv_field_customer_code:'客户编号', csv_field_full_name:'姓名', csv_field_client_type:'类型',
+    csv_field_phone:'电话', csv_field_email:'邮箱', csv_field_address:'地址',
+    csv_field_birthday:'生日', csv_field_contact_1_name:'联系人1姓名', csv_field_contact_1_phone:'联系人1电话',
+    csv_field_contact_2_name:'联系人2姓名', csv_field_contact_2_phone:'联系人2电话',
+  },
+  en: {
+    nav_main:'Main Menu', nav_dashboard:'Dashboard', nav_clients:'Clients', nav_policies:'Policies',
+    nav_tasks:'Tasks', nav_business:'Business', nav_quotes:'New Quote', nav_import:'Import Quote',
+    nav_renewal:'Renewal', nav_records:'Records', nav_changes:'Changes', nav_reports:'Reports',
+    user_name:'Independent Broker',
+    cfg_sub:'Enter your Supabase credentials', cfg_url_label:'Project URL', cfg_key_label:'Anon Public Key',
+    cfg_connect:'Connect', cfg_err_missing:'Please enter Project URL and Anon Key',
+    cfg_err_failed:'Connection failed: {msg}',
+    page_title:'Clients',
+    btn_new_client:'＋ New Client', btn_export:'↓ Export', btn_import:'↑ Import',
+    menu_export_csv:'↓ Export CSV', menu_import_csv:'↑ Import CSV',
+    search_placeholder:'Search name, code, phone, policy number…',
+    filter_all:'All', filter_renewal:'Upcoming Renewal', filter_tasks:'Open Tasks',
+    th_name:'Name', th_code:'Code', th_phone:'Phone', th_email:'Email',
+    th_renewal:'Renewal', th_tasks:'Tasks',
+    loading:'Loading…', loading_more:'Loading more…',
+    table_meta:'{count} clients', table_meta_one:'1 client',
+    renews_in:'Renews in {days}d',
+    task_count:'{count} task(s)',
+    empty_no_clients:'No clients yet.',
+    empty_add_first:'Add your first client',
+    empty_or:'or',
+    empty_import_csv:'Import CSV',
+    empty_no_match:'No clients match.',
+    empty_clear_filters:'Clear filters',
+    modal_new_client:'New Client', modal_edit_client:'Edit Client',
+    section_basic:'Basic Info',
+    label_code:'Customer Code', label_type:'Type',
+    type_individual:'Individual', type_corporation:'Corporation',
+    label_firstname:'First Name', label_lastname:'Last Name', label_middlename:'Middle Name',
+    label_businessname:'Business Name',
+    label_birthday:'Birthday', label_phone:'Phone', label_email:'Email',
+    label_address:'Address', label_referral:'Referral Source',
+    label_tags:'Tags', label_notes:'Notes',
+    label_title:'Title', label_contact_name:'Name', label_marital:'Marital Status',
+    label_relation:'Relation',
+    marital_single:'Single', marital_married:'Married', marital_divorced:'Divorced', marital_widowed:'Widowed',
+    hint_code:'4 uppercase letters + 2 digits', hint_tags:'Comma-separated',
+    ph_code:'ABCD01', ph_firstname:'John', ph_lastname:'Smith', ph_middlename:'(optional)',
+    ph_businessname:'ABC Trading Inc.', ph_referral:'Friend / Ad / Website',
+    ph_tags:'VIP, referral-source', ph_notes:'Any additional notes…', ph_relation:'Spouse / Parent / Child',
+    btn_cancel:'Cancel', btn_save_client:'Save Client', btn_saving:'Saving…',
+    err_code_format:'Required: 4 uppercase letters + 2 digits (e.g. ABCD01)',
+    err_firstname_required:'First name is required', err_lastname_required:'Last name is required',
+    err_businessname_required:'Business name is required',
+    toast_client_added:'Client added', toast_client_updated:'Client updated',
+    toast_exported:'Exported {count} clients',
+    toast_import_complete:'Import complete: {added} added, {updated} updated, {skipped} skipped',
+    toast_csv_only:'Please select a .csv file', toast_file_too_large:'File too large (max 1MB)',
+    toast_csv_min_rows:'CSV must have a header row and at least one data row',
+    confirm_close:'Are you sure? Unsaved changes will be lost.',
+    modal_import_csv:'Import CSV', btn_confirm_import:'Confirm Import', btn_importing:'Importing…',
+    csv_rows_found:'{count} rows found. First 5 shown.',
+    csv_column_mapping:'Column Mapping', csv_skip:'— skip —',
+    csv_code_warning:'Invalid customer_code format in preview: {codes} (expected ABCD01 format)',
+    csv_field_customer_code:'Customer Code', csv_field_full_name:'Full Name', csv_field_client_type:'Type',
+    csv_field_phone:'Phone', csv_field_email:'Email', csv_field_address:'Address',
+    csv_field_birthday:'Birthday', csv_field_contact_1_name:'Contact 1 Name', csv_field_contact_1_phone:'Contact 1 Phone',
+    csv_field_contact_2_name:'Contact 2 Name', csv_field_contact_2_phone:'Contact 2 Phone',
+    section_contact1:'Contact 1 (optional)', section_contact2:'Contact 2 (optional)',
+  }
+};
+// Add missing keys to zh that exist in en for contact sections
+CLIENTS_I18N_FALLBACK.zh.section_contact1 = '联系人 1（可选）';
+CLIENTS_I18N_FALLBACK.zh.section_contact2 = '联系人 2（可选）';
+
+let LANG = localStorage.getItem('ams_lang') || 'zh';
+function t(key, params) {
+  let s = (CLIENTS_I18N_FALLBACK[LANG] && CLIENTS_I18N_FALLBACK[LANG][key]) || (CLIENTS_I18N_FALLBACK.zh[key]) || key;
+  if (params) { for (const [k,v] of Object.entries(params)) s = s.replace(`{${k}}`, v); }
+  return s;
+}
+function legacyApplyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const txt = t(key);
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = txt;
+    else el.textContent = txt;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-ph'));
+  });
+  // Update select options
+  document.querySelectorAll('select option[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  const lbl = document.getElementById('lang-label');
+  if (lbl) lbl.textContent = LANG === 'zh' ? 'EN' : '中文';
+}
+function legacyToggleLang() {
+  LANG = LANG === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('ams_lang', LANG);
+  legacyApplyLang();
+  // Re-render dynamic content if needed
+  if (typeof loadClients === 'function' && db) loadClients();
+  // Re-render table if data is loaded
+  if (allClients.length > 0) {
+    displayedRows = 0;
+    document.getElementById('client-tbody').innerHTML = '';
+    document.getElementById('table-meta').textContent = filteredClients.length === 1 ? t('table_meta_one') : t('table_meta', {count: filteredClients.length});
+    renderNextPage();
+  }
+}
+
+function getLang() {
+  return window.__amsGetLang ? window.__amsGetLang() : (localStorage.getItem('ams_lang') || 'zh');
+}
+
+t = function(key, params) {
+  LANG = getLang();
+  let s = window.__amsT ? window.__amsT(key, LANG) : key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) s = s.replace(`{${k}}`, v);
+  }
+  return s;
+};
+
+window.applyLang = () => {
+  LANG = getLang();
+  if (window.__amsTranslate) window.__amsTranslate(LANG);
+  const lbl = document.getElementById('lang-label');
+  if (lbl) lbl.textContent = LANG === 'zh' ? 'EN' : '中文';
+  document.title = LANG === 'zh' ? 'AMS · 客户管理' : 'AMS · Clients';
+};
+
+window.toggleLang = () => {
+  const next = getLang() === 'zh' ? 'en' : 'zh';
+  if (window.__amsSetLang) window.__amsSetLang(next);
+  else localStorage.setItem('ams_lang', next);
+  LANG = next;
+  window.applyLang();
+  if (typeof loadClients === 'function' && db) loadClients();
+  if (allClients.length > 0) {
+    displayedRows = 0;
+    document.getElementById('client-tbody').innerHTML = '';
+    document.getElementById('table-meta').textContent = filteredClients.length === 1 ? t('table_meta_one') : t('table_meta', {count: filteredClients.length});
+    renderNextPage();
+  }
+};
+
+window.applyLang();
+
+// ── State ──
+let db = null;
+let allClients = [];      // full dataset from DB
+let renewalMap = {};       // customer_code → soonest expiry date
+let taskCountMap = {};     // customer_code → open task count
+let activeFilter = 'all';
+let searchDebounce = null;
+let displayedRows = 0;
+const PAGE_SIZE = 25;
+let filteredClients = [];  // result after search + filter
+let csvParsed = [];        // raw parsed CSV rows
+let csvMapping = {};       // canonical_field → csv_column_index
+let editingId = null;
+
+// ── Supabase ──
+// Auto-connect from shared local/browser bootstrap
+(async function autoConnect() {
+  const creds = window.AMSBootstrap ? await window.AMSBootstrap.getCredentials() : null;
+  const url = creds?.url;
+  const key = creds?.key;
+
+  if (url && key) {
+    document.getElementById('cfg-url').value = url;
+    document.getElementById('cfg-key').value = key;
+    db = window.supabase.createClient(url, key);
+    if (window.AMSBootstrap) window.AMSBootstrap.storeCredentials(url, key);
+    document.getElementById('config-screen').style.display = 'none';
+    init();
+  }
+})();
+
+async function connectSupabase() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  const errEl = document.getElementById('cfg-error');
+  errEl.style.display = 'none';
+  if (!url || !key) { errEl.textContent = t('cfg_err_missing'); errEl.style.display = 'block'; return; }
+  try {
+    db = window.supabase.createClient(url, key);
+    const { error } = await db.from('clients').select('id').limit(1);
+    if (error) throw error;
+    if (window.AMSBootstrap) window.AMSBootstrap.storeCredentials(url, key);
+    document.getElementById('config-screen').style.display = 'none';
+    init();
+  } catch(e) {
+    errEl.textContent = t('cfg_err_failed', {msg: e.message || 'Check credentials'});
+    errEl.style.display = 'block';
+  }
+}
+
+// ── Helpers ──
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getInitials(name) { return (name||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||'').join(''); }
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+function daysUntil(dateStr) { return Math.ceil((new Date(dateStr) - new Date()) / 86400000); }
+
+// ── Sidebar (mobile) ──
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+
+// ── Client type toggle ──
+function toggleClientNameFields() {
+  const type = document.getElementById('f-type').value;
+  document.getElementById('name-fields-individual').style.display = type === 'individual' ? 'contents' : 'none';
+  document.getElementById('name-fields-corporation').style.display = type === 'corporation' ? 'contents' : 'none';
+}
+
+// ── More menu (mobile) ──
+function toggleMoreMenu() { document.getElementById('more-menu').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('.more-menu-wrap')) document.getElementById('more-menu').classList.remove('open'); });
+
+// ── Responsive: show/hide more btn ──
+function checkResponsive() {
+  const isMobile = window.innerWidth <= 768;
+  document.getElementById('more-btn').style.display = isMobile ? '' : 'none';
+}
+window.addEventListener('resize', checkResponsive);
+
+// ─────────────────────────────────────────
+// Task 2: Data Loading & Rendering
+// ─────────────────────────────────────────
+async function init() {
+  checkResponsive();
+  setupInfiniteScroll();
+  await loadAllData();
+}
+
+async function loadAllData() {
+  document.getElementById('client-tbody').innerHTML =
+    `<tr class="loading-row"><td colspan="6"><span class="spinner"></span> ${esc(t('loading'))}</td></tr>`;
+  try {
+    const { data: clients, error: cErr } = await db
+      .from('clients')
+      .select('id, customer_code, full_name, client_type, phone, email, birthday, tags')
+      .order('full_name', { ascending: true });
+    if (cErr) throw cErr;
+    allClients = clients || [];
+
+    const { data: renewals } = await db
+      .from('v_renewal_dashboard')
+      .select('customer_code, expiry_date');
+    renewalMap = {};
+    (renewals || []).forEach(r => {
+      if (!renewalMap[r.customer_code] || r.expiry_date < renewalMap[r.customer_code]) {
+        renewalMap[r.customer_code] = r.expiry_date;
+      }
+    });
+
+    const { data: tasks } = await db
+      .from('tasks')
+      .select('customer_code')
+      .not('status', 'in', '("completed","abandoned")');
+    taskCountMap = {};
+    (tasks || []).forEach(t => {
+      if (t.customer_code) taskCountMap[t.customer_code] = (taskCountMap[t.customer_code] || 0) + 1;
+    });
+
+    applyFilters();
+  } catch(e) {
+    showToast(e.message, 'error');
+    document.getElementById('client-tbody').innerHTML =
+      `<tr><td colspan="6" class="table-empty"><span class="table-empty-icon">⚠️</span>${esc(e.message)}</td></tr>`;
+  }
+}
+
+function applyFilters() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  let result = allClients;
+
+  if (activeFilter === 'renewal') {
+    result = result.filter(c => renewalMap[c.customer_code]);
+  } else if (activeFilter === 'tasks') {
+    result = result.filter(c => taskCountMap[c.customer_code] > 0);
+  }
+
+  if (q) {
+    result = result.filter(c =>
+      c.full_name?.toLowerCase().includes(q) ||
+      c.customer_code?.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q)
+    );
+  }
+
+  filteredClients = result;
+  displayedRows = 0;
+  document.getElementById('client-tbody').innerHTML = '';
+  document.getElementById('table-meta').textContent = filteredClients.length === 1 ? t('table_meta_one') : t('table_meta', {count: filteredClients.length});
+  renderNextPage();
+}
+
+function renderNextPage() {
+  const slice = filteredClients.slice(displayedRows, displayedRows + PAGE_SIZE);
+  if (slice.length === 0 && displayedRows === 0) {
+    if (allClients.length === 0) {
+      document.getElementById('client-tbody').innerHTML =
+        `<tr><td colspan="6"><div class="table-empty">
+          <span class="table-empty-icon">👤</span>
+          ${esc(t('empty_no_clients'))} <button class="btn btn-primary btn-sm" onclick="openNewClientModal()">${esc(t('empty_add_first'))}</button>
+          ${esc(t('empty_or'))} <button class="btn btn-ghost btn-sm" onclick="document.getElementById('csv-file').click()">${esc(t('empty_import_csv'))}</button>
+        </div></td></tr>`;
+    } else {
+      document.getElementById('client-tbody').innerHTML =
+        `<tr><td colspan="6"><div class="table-empty">
+          <span class="table-empty-icon">🔍</span>
+          ${esc(t('empty_no_match'))} <a href="#" onclick="clearFilters();return false">${esc(t('empty_clear_filters'))}</a>
+        </div></td></tr>`;
+    }
+    return;
+  }
+  const tbody = document.getElementById('client-tbody');
+  slice.forEach(c => {
+    const initials = getInitials(c.full_name);
+    const isCorporation = c.client_type === 'corporation';
+    const expiry = renewalMap[c.customer_code];
+    const taskCount = taskCountMap[c.customer_code] || 0;
+    let renewalHtml = '';
+    if (expiry) {
+      const days = daysUntil(expiry);
+      const cls = days <= 14 ? 'renewal-urgent' : 'renewal-warning';
+      renewalHtml = `<span class="renewal-badge ${cls}">${esc(t('renews_in', {days}))}</span>`;
+    }
+    const tasksHtml = taskCount > 0
+      ? `<span class="tasks-badge">${esc(t('task_count', {count: taskCount}))}</span>` : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><a href="ams_client_detail.html?id=${esc(c.id)}" class="td-name-link"><span class="client-avatar-sm${isCorporation?' commercial':''}">${esc(initials)}</span><span class="td-name">${esc(c.full_name)}</span></a></td>
+      <td class="td-code">${esc(c.customer_code)}</td>
+      <td class="td-secondary">${esc(c.phone||'')}</td>
+      <td class="td-secondary">${esc(c.email||'')}</td>
+      <td>${renewalHtml}</td>
+      <td>${tasksHtml}</td>`;
+    tbody.appendChild(tr);
+  });
+  displayedRows += slice.length;
+}
+
+function clearFilters() {
+  document.getElementById('search-input').value = '';
+  setFilter('all');
+}
+
+function setFilter(name) {
+  activeFilter = name;
+  ['all','renewal','tasks'].forEach(f => {
+    document.getElementById(`filter-${f}`).classList.toggle('active', f === name);
+  });
+  applyFilters();
+}
+
+// ── Search with two-query merge ──
+document.getElementById('search-input').addEventListener('input', () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(runSearch, 300);
+});
+
+async function runSearch() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  if (!q) { applyFilters(); return; }
+
+  const [clientRes, policyRes] = await Promise.all([
+    db.from('clients')
+      .select('id, customer_code, full_name, client_type, phone, email, birthday, tags')
+      .or(`full_name.ilike.%${q}%,phone.ilike.%${q}%,customer_code.ilike.%${q}%`)
+      .order('full_name'),
+    db.from('policies')
+      .select('customer_code')
+      .ilike('policy_number', `%${q}%`)
+  ]);
+
+  const codeSet = new Set((policyRes.data || []).map(p => p.customer_code));
+  const byPolicyCode = allClients.filter(c => codeSet.has(c.customer_code));
+  const byClientFields = clientRes.data || [];
+
+  const seen = new Set();
+  const merged = [];
+  [...byClientFields, ...byPolicyCode].forEach(c => {
+    if (!seen.has(c.customer_code)) { seen.add(c.customer_code); merged.push(c); }
+  });
+
+  let result = merged;
+  if (activeFilter === 'renewal') result = result.filter(c => renewalMap[c.customer_code]);
+  if (activeFilter === 'tasks')   result = result.filter(c => taskCountMap[c.customer_code] > 0);
+
+  filteredClients = result;
+  displayedRows = 0;
+  document.getElementById('client-tbody').innerHTML = '';
+  document.getElementById('table-meta').textContent = filteredClients.length === 1 ? t('table_meta_one') : t('table_meta', {count: filteredClients.length});
+  renderNextPage();
+}
+
+// ── Infinite Scroll ──
+function setupInfiniteScroll() {
+  const sentinel = document.getElementById('scroll-sentinel');
+  const indicator = document.getElementById('load-more-indicator');
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && displayedRows < filteredClients.length) {
+      indicator.classList.add('visible');
+      setTimeout(() => {
+        renderNextPage();
+        indicator.classList.remove('visible');
+      }, 200);
+    }
+  }, { threshold: 0.1 });
+  observer.observe(sentinel);
+}
+
+// ─────────────────────────────────────────
+// Task 3: New Client Modal
+// ─────────────────────────────────────────
+function openNewClientModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = t('modal_new_client');
+  clearClientForm();
+  document.getElementById('client-modal').classList.add('open');
+}
+
+function closeClientModal() {
+  document.getElementById('client-modal').classList.remove('open');
+}
+
+function safeCloseClientModal() {
+  if (!confirm(t('confirm_close'))) return;
+  closeClientModal();
+}
+
+function clearClientForm() {
+  ['f-code','f-firstname','f-middlename','f-lastname','f-businessname','f-phone','f-email','f-address','f-birthday','f-referral','f-tags','f-notes',
+   'c1-name','c1-phone','c1-email','c1-birthday','c1-relation',
+   'c2-name','c2-phone','c2-email','c2-birthday','c2-relation'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-type').value = 'individual';
+  document.getElementById('c1-title').value = '';
+  document.getElementById('c1-marital').value = '';
+  document.getElementById('c2-title').value = '';
+  document.getElementById('c2-marital').value = '';
+  document.getElementById('f-code-err').textContent = '';
+  document.getElementById('f-name-err').textContent = '';
+  const lnErr = document.getElementById('f-lastname-err'); if (lnErr) lnErr.textContent = '';
+  const bnErr = document.getElementById('f-businessname-err'); if (bnErr) bnErr.textContent = '';
+  document.getElementById('f-code').disabled = false;
+  toggleClientNameFields();
+}
+
+async function saveClient() {
+  const code = document.getElementById('f-code').value.trim().toUpperCase();
+  const clientType = document.getElementById('f-type').value;
+  let name = '';
+
+  let valid = true;
+  if (!code || !/^[A-Z]{4}[0-9]{2}$/.test(code)) {
+    document.getElementById('f-code-err').textContent = t('err_code_format');
+    valid = false;
+  } else { document.getElementById('f-code-err').textContent = ''; }
+
+  // Clear name errors
+  document.getElementById('f-name-err').textContent = '';
+  const lnErr = document.getElementById('f-lastname-err'); if (lnErr) lnErr.textContent = '';
+  const bnErr = document.getElementById('f-businessname-err'); if (bnErr) bnErr.textContent = '';
+
+  if (clientType === 'individual') {
+    const first = document.getElementById('f-firstname').value.trim();
+    const middle = document.getElementById('f-middlename').value.trim();
+    const last = document.getElementById('f-lastname').value.trim();
+    if (!first) { document.getElementById('f-name-err').textContent = t('err_firstname_required'); valid = false; }
+    if (!last) { document.getElementById('f-lastname-err').textContent = t('err_lastname_required'); valid = false; }
+    name = [first, middle, last].filter(Boolean).join(' ');
+  } else {
+    name = document.getElementById('f-businessname').value.trim();
+    if (!name) { document.getElementById('f-businessname-err').textContent = t('err_businessname_required'); valid = false; }
+  }
+
+  if (!valid) return;
+
+  const tags = document.getElementById('f-tags').value.trim()
+    ? document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean)
+    : [];
+
+  const contact1 = buildContact('c1');
+  const contact2 = buildContact('c2');
+
+  const payload = {
+    customer_code: code,
+    full_name: name,
+    client_type: clientType,
+    phone: document.getElementById('f-phone').value.trim() || null,
+    email: document.getElementById('f-email').value.trim() || null,
+    address: document.getElementById('f-address').value.trim() || null,
+    birthday: document.getElementById('f-birthday').value || null,
+    referral_source: document.getElementById('f-referral').value.trim() || null,
+    tags,
+    notes: document.getElementById('f-notes').value.trim() || null,
+    contact_1: contact1,
+    contact_2: contact2,
+  };
+
+  const btn = document.getElementById('modal-save-btn');
+  btn.disabled = true; btn.textContent = t('btn_saving');
+
+  try {
+    let error;
+    if (editingId) {
+      ({ error } = await db.from('clients').update(payload).eq('id', editingId));
+    } else {
+      ({ error } = await db.from('clients').insert(payload));
+    }
+    if (error) throw error;
+    closeClientModal();
+    showToast(editingId ? t('toast_client_updated') : t('toast_client_added'), 'success');
+    await loadAllData();
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = t('btn_save_client');
+  }
+}
+
+function buildContact(prefix) {
+  const name = document.getElementById(`${prefix}-name`).value.trim();
+  if (!name) return null;
+  return {
+    title:          document.getElementById(`${prefix}-title`).value || null,
+    full_name:      name,
+    phone:          document.getElementById(`${prefix}-phone`).value.trim() || null,
+    email:          document.getElementById(`${prefix}-email`).value.trim() || null,
+    birthday:       document.getElementById(`${prefix}-birthday`).value || null,
+    marital_status: document.getElementById(`${prefix}-marital`).value || null,
+    relation:       document.getElementById(`${prefix}-relation`).value.trim() || null,
+  };
+}
+
+// ─────────────────────────────────────────
+// Task 4: CSV Export
+// ─────────────────────────────────────────
+function exportCSV() {
+  const headers = ['customer_code','full_name','client_type','phone','email','address','birthday',
+                   'contact_1_name','contact_1_phone','contact_2_name','contact_2_phone'];
+  fetchAndExport(headers);
+}
+
+async function fetchAndExport(headers) {
+  try {
+    let query = db.from('clients').select('customer_code,full_name,client_type,phone,email,address,birthday,contact_1,contact_2');
+    if (activeFilter !== 'all' || document.getElementById('search-input').value.trim()) {
+      const codes = filteredClients.map(c => c.customer_code);
+      query = query.in('customer_code', codes);
+    }
+    const { data, error } = await query.order('full_name');
+    if (error) throw error;
+
+    const rows = (data||[]).map(c => [
+      c.customer_code, c.full_name, c.client_type||'',
+      c.phone||'', c.email||'', c.address||'', c.birthday||'',
+      c.contact_1?.full_name||'', c.contact_1?.phone||'',
+      c.contact_2?.full_name||'', c.contact_2?.phone||''
+    ]);
+
+    const csv = [headers, ...rows].map(r =>
+      r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')
+    ).join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `ams-clients-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast(t('toast_exported', {count: rows.length}));
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────
+// Task 5: CSV Import
+// ─────────────────────────────────────────
+const CANONICAL_FIELDS = [
+  { key: 'customer_code', i18nKey: 'csv_field_customer_code', required: true },
+  { key: 'full_name',     i18nKey: 'csv_field_full_name',     required: true },
+  { key: 'client_type',   i18nKey: 'csv_field_client_type',   required: false },
+  { key: 'phone',         i18nKey: 'csv_field_phone',         required: false },
+  { key: 'email',         i18nKey: 'csv_field_email',         required: false },
+  { key: 'address',       i18nKey: 'csv_field_address',       required: false },
+  { key: 'birthday',      i18nKey: 'csv_field_birthday',      required: false },
+  { key: 'contact_1_name',  i18nKey: 'csv_field_contact_1_name',  required: false },
+  { key: 'contact_1_phone', i18nKey: 'csv_field_contact_1_phone', required: false },
+  { key: 'contact_2_name',  i18nKey: 'csv_field_contact_2_name',  required: false },
+  { key: 'contact_2_phone', i18nKey: 'csv_field_contact_2_phone', required: false },
+];
+const REQUIRED_KEYS = CANONICAL_FIELDS.filter(f => f.required).map(f => f.key);
+const CODE_RE = /^[A-Z]{4}[0-9]{2}$/;
+
+function handleCSVFile(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    showToast(t('toast_csv_only'), 'error'); return;
+  }
+  if (file.size > 1024 * 1024) {
+    showToast(t('toast_file_too_large'), 'error'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => parseAndPreviewCSV(ev.target.result);
+  reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+  const result = []; let cur = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function parseAndPreviewCSV(text) {
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) { showToast(t('toast_csv_min_rows'), 'error'); return; }
+
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g,''));
+  csvParsed = lines.slice(1).map(l => parseCSVLine(l).map(v => v.replace(/^"|"$/g,'')));
+
+  csvMapping = {};
+  CANONICAL_FIELDS.forEach(f => {
+    const idx = headers.findIndex(h => h.toLowerCase().replace(/[\s_-]/g,'') === f.key.replace(/_/g,''));
+    if (idx >= 0) csvMapping[f.key] = idx;
+  });
+
+  buildCSVPreview(headers);
+}
+
+function buildCSVPreview(csvHeaders) {
+  const preview5 = csvParsed.slice(0, 5);
+  const codeIdx = csvMapping['customer_code'];
+  const warnings = codeIdx !== undefined
+    ? preview5.filter(r => r[codeIdx] && !CODE_RE.test(r[codeIdx].toUpperCase())).map(r => r[codeIdx])
+    : [];
+
+  let html = `<p style="margin-bottom:16px;font-size:13px;color:var(--mid-text)">${esc(t('csv_rows_found', {count: csvParsed.length}))}</p>`;
+
+  html += `<div style="margin-bottom:20px">
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px">${esc(t('csv_column_mapping'))}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`;
+  CANONICAL_FIELDS.forEach(f => {
+    const currentIdx = csvMapping[f.key] ?? '';
+    const fieldLabel = t(f.i18nKey);
+    html += `<div style="display:flex;align-items:center;gap:8px;font-size:13px">
+      <label style="min-width:140px;color:var(--mid-text)">${esc(fieldLabel)}${f.required?' <span style="color:var(--red)">*</span>':''}</label>
+      <select class="form-select" style="flex:1;font-size:12px" data-field="${f.key}" onchange="updateMapping('${f.key}',this.value)">
+        <option value="">${esc(t('csv_skip'))}</option>
+        ${csvHeaders.map((h,i) => `<option value="${i}" ${currentIdx===i?'selected':''}>${esc(h)}</option>`).join('')}
+      </select>
+    </div>`;
+  });
+  html += '</div></div>';
+
+  if (warnings.length > 0) {
+    html += `<div style="background:#fff0f0;border:1px solid #ffd5d5;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--red)">
+      ⚠️ ${esc(t('csv_code_warning', {codes: warnings.join(', ')}))}</div>`;
+  }
+
+  html += `<div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+    <thead><tr>${csvHeaders.map(h=>`<th style="padding:6px;border-bottom:1px solid var(--card-border);text-align:left;color:var(--mid-text)">${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${preview5.map(r=>`<tr>${r.map(v=>`<td style="padding:6px;border-bottom:1px solid #f5f7fa">${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+
+  document.getElementById('csv-modal-body').innerHTML = html;
+  document.getElementById('csv-modal').classList.add('open');
+  updateConfirmBtn();
+}
+
+function updateMapping(field, value) {
+  if (value === '') { delete csvMapping[field]; }
+  else { csvMapping[field] = parseInt(value); }
+  updateConfirmBtn();
+}
+
+function updateConfirmBtn() {
+  const allMapped = REQUIRED_KEYS.every(k => csvMapping[k] !== undefined);
+  document.getElementById('csv-confirm-btn').disabled = !allMapped;
+}
+
+function closeCSVModal() { document.getElementById('csv-modal').classList.remove('open'); }
+
+function safeCloseCSVModal() {
+  if (!confirm(t('confirm_close'))) return;
+  closeCSVModal();
+}
+
+async function runCSVImport() {
+  const btn = document.getElementById('csv-confirm-btn');
+  btn.disabled = true; btn.textContent = t('btn_importing');
+
+  let added = 0, updated = 0, skipped = 0;
+  for (const row of csvParsed) {
+    const get = key => csvMapping[key] !== undefined ? (row[csvMapping[key]] || '').trim() : '';
+    const code = get('customer_code').toUpperCase();
+    const name = get('full_name');
+    if (!code || !name) { skipped++; continue; }
+    if (!CODE_RE.test(code)) { skipped++; continue; }
+
+    const contact_1_name = get('contact_1_name');
+    const contact_2_name = get('contact_2_name');
+    const payload = {
+      customer_code: code, full_name: name,
+      client_type: get('client_type') || 'individual',
+      phone: get('phone') || null, email: get('email') || null,
+      address: get('address') || null, birthday: get('birthday') || null,
+      contact_1: contact_1_name ? { full_name: contact_1_name, phone: get('contact_1_phone') || null } : null,
+      contact_2: contact_2_name ? { full_name: contact_2_name, phone: get('contact_2_phone') || null } : null,
+    };
+
+    const { data: existing } = await db.from('clients').select('id').eq('customer_code', code).maybeSingle();
+    if (existing) {
+      const { error } = await db.from('clients').update(payload).eq('customer_code', code);
+      if (error) { skipped++; } else { updated++; }
+    } else {
+      const { error } = await db.from('clients').insert(payload);
+      if (error) { skipped++; } else { added++; }
+    }
+  }
+  closeCSVModal();
+  showToast(t('toast_import_complete', {added, updated, skipped}));
+  await loadAllData();
+  btn.disabled = false; btn.textContent = t('btn_confirm_import');
+}
+
+// ── Modal backdrop close ──
+document.getElementById('client-modal').addEventListener('click', function(e) { if (e.target === this) safeCloseClientModal(); });
+document.getElementById('csv-modal').addEventListener('click', function(e) { if (e.target === this) safeCloseCSVModal(); });
+</script>
+</body>
+</html>

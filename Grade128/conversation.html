@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="MapleQuest 中英双语亲子聊天卡，为 4 岁和 7 岁孩子准备的温暖晚间话题。">
+  <title>今晚聊聊 · MapleQuest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="conversation.css">
+</head>
+<body class="conversation-body">
+  <a class="skip-link" href="#conversation-main">跳到今晚的话题 / Skip to tonight's card</a>
+
+  <header class="conversation-nav">
+    <a class="wordmark" href="index.html" aria-label="MapleQuest 首页">
+      <span class="spark" aria-hidden="true"><span></span></span>
+      MapleQuest
+    </a>
+    <p><span>今晚聊聊</span><small>Family talk cards</small></p>
+    <nav aria-label="页面导航">
+      <a href="index.html">学习主页 <span lang="en">Learn</span></a>
+      <a href="parent.html">家长中心 <span lang="en">Parents</span></a>
+    </nav>
+  </header>
+
+  <main id="conversation-main" tabindex="-1">
+    <section class="conversation-hero">
+      <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div>
+      <div class="hero-orbit hero-orbit-two" aria-hidden="true"></div>
+      <div class="conversation-shell hero-layout">
+        <div class="hero-copy">
+          <p class="conversation-kicker">睡前十分钟 · TEN MINUTES TOGETHER</p>
+          <h1>今晚，<br><em>聊点什么？</em></h1>
+          <p class="hero-english" lang="en">One little question.<br>A big window into their world.</p>
+          <p class="hero-intro">为 <strong>4 岁</strong>和<strong> 7 岁</strong>的两个孩子准备。没有标准答案，轮流说、认真听，就很好。</p>
+          <div class="hero-note">
+            <span aria-hidden="true">✦</span>
+            <p><strong>家长小提示</strong><span>先分享你自己的答案，孩子会更愿意开口。</span></p>
+          </div>
+        </div>
+
+        <div class="card-drawer">
+          <div class="card-stack card-stack-back" aria-hidden="true"></div>
+          <div class="card-stack card-stack-mid" aria-hidden="true"></div>
+          <article class="talk-card" id="talk-card" aria-live="polite" aria-atomic="true">
+            <header class="talk-card-header">
+              <span class="category-mark" id="category-mark" aria-hidden="true">家</span>
+              <p><strong id="card-category-zh">家庭关系</strong><span id="card-category-en" lang="en">Family bonds</span></p>
+              <span class="card-number" id="card-number">01 / 36</span>
+            </header>
+
+            <div class="main-question">
+              <p class="question-label">今晚的问题 <span lang="en">TONIGHT'S QUESTION</span></p>
+              <h2 id="question-zh"></h2>
+              <p id="question-en" lang="en"></p>
+            </div>
+
+            <div class="age-prompts">
+              <section>
+                <p class="age-label"><strong>4 岁</strong><span lang="en">AGE 4 · START HERE</span></p>
+                <p id="age4-zh"></p>
+                <small id="age4-en" lang="en"></small>
+              </section>
+              <section>
+                <p class="age-label"><strong>7 岁</strong><span lang="en">AGE 7 · GO DEEPER</span></p>
+                <p id="age7-zh"></p>
+                <small id="age7-en" lang="en"></small>
+              </section>
+            </div>
+
+            <footer class="together-prompt">
+              <span aria-hidden="true">↗</span>
+              <div>
+                <p>一起试试 <span lang="en">TRY TOGETHER</span></p>
+                <strong id="together-zh"></strong>
+                <small id="together-en" lang="en"></small>
+              </div>
+            </footer>
+          </article>
+
+          <button class="draw-button" id="draw-card" type="button">
+            <span aria-hidden="true" class="draw-icon">↻</span>
+            <span><strong>换一张</strong><small lang="en">DRAW ANOTHER</small></span>
+          </button>
+          <p class="deck-status" id="deck-status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-section" aria-labelledby="topic-title">
+      <div class="conversation-shell">
+        <div class="topic-heading">
+          <div>
+            <p>六个成长方向 · SIX WAYS TO CONNECT</p>
+            <h2 id="topic-title">想聊哪一类？</h2>
+          </div>
+          <p>选一个主题，或让今晚保留一点惊喜。</p>
+        </div>
+        <div class="topic-filters" id="topic-filters" role="group" aria-label="选择聊天主题">
+          <button type="button" data-category="all" aria-pressed="true">
+            <span class="filter-symbol">∞</span><strong>全部随机</strong><small lang="en">Surprise me</small>
+          </button>
+          <button type="button" data-category="family" aria-pressed="false">
+            <span class="filter-symbol">家</span><strong>家庭关系</strong><small lang="en">Family bonds</small>
+          </button>
+          <button type="button" data-category="self" aria-pressed="false">
+            <span class="filter-symbol">我</span><strong>认识自己</strong><small lang="en">Knowing myself</small>
+          </button>
+          <button type="button" data-category="imagination" aria-pressed="false">
+            <span class="filter-symbol">想</span><strong>想象拓展</strong><small lang="en">Imagination</small>
+          </button>
+          <button type="button" data-category="thinking" aria-pressed="false">
+            <span class="filter-symbol">思</span><strong>发散思维</strong><small lang="en">Creative thinking</small>
+          </button>
+          <button type="button" data-category="friendship" aria-pressed="false">
+            <span class="filter-symbol">伴</span><strong>人际关系</strong><small lang="en">Friendship</small>
+          </button>
+          <button type="button" data-category="feelings" aria-pressed="false">
+            <span class="filter-symbol">心</span><strong>情绪觉察</strong><small lang="en">Feelings</small>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="conversation-guide">
+      <div class="conversation-shell guide-grid">
+        <div class="guide-title">
+          <span>10</span>
+          <div><strong>分钟就够</strong><small lang="en">MINUTES IS PLENTY</small></div>
+        </div>
+        <ol>
+          <li><span>01</span><p><strong>大人先回答</strong><small>Adults go first</small></p></li>
+          <li><span>02</span><p><strong>不纠正答案</strong><small>Listen without fixing</small></p></li>
+          <li><span>03</span><p><strong>允许说“跳过”</strong><small>“Pass” is always okay</small></p></li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="conversation-footer">
+    <div class="conversation-shell">
+      <p>把答案留在今晚，把好奇心带到明天。</p>
+      <span lang="en">Leave the answers here. Carry the curiosity into tomorrow.</span>
+    </div>
+  </footer>
+
+  <script src="conversation.js"></script>
+</body>
+</html>

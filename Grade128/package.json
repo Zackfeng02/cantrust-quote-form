@@ -1,0 +1,12 @@
+{
+  "name": "maplequest",
+  "private": true,
+  "scripts": {
+    "start": "python server.py",
+    "start:lan": "python server.py --lan",
+    "test": "node --test --test-isolation=none test/*.test.cjs",
+    "test:server": "python -m unittest discover -s test -p test_server.py",
+    "audit:content": "node scripts/audit-content.cjs",
+    "check": "node --check assessment.js && node --check curriculum.js && node --check app.js && node --check parent.js && node --check conversation.js && python -m py_compile server.py"
+  }
+}
