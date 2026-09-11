@@ -28,3 +28,29 @@ test('demo teams cannot use the ClientCore customer lookup', () => {
   assert.equal(canQueryClientCoreCustomers({ demo: true }), false);
   assert.equal(canQueryClientCoreCustomers({ demo: false }), true);
 });
+
+test('Docker host HTTP requires explicit opt-in and rejects lookalike hosts', async () => {
+  const originalFetch = globalThis.fetch;
+  const keys = ['CLIENTCORE_KANBAN_API_BASE_URL', 'CLIENTCORE_KANBAN_API_KEY', 'CLIENTCORE_ALLOW_DOCKER_HOST'];
+  const original = { ...process.env };
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return Response.json({ items: [] }); };
+  try {
+    process.env.CLIENTCORE_KANBAN_API_KEY = 'synthetic-key';
+    process.env.CLIENTCORE_KANBAN_API_BASE_URL = 'http://host.docker.internal:5174/api/';
+    delete process.env.CLIENTCORE_ALLOW_DOCKER_HOST;
+    await assert.rejects(searchClientCoreCustomers('test'), /HTTPS/);
+    assert.equal(calls, 0);
+    process.env.CLIENTCORE_ALLOW_DOCKER_HOST = 'true';
+    assert.deepEqual(await searchClientCoreCustomers('test'), []);
+    assert.equal(calls, 1);
+    for (const host of ['host.docker.internal.example.com', 'example.com']) {
+      process.env.CLIENTCORE_KANBAN_API_BASE_URL = 'http://' + host + '/api/';
+      await assert.rejects(searchClientCoreCustomers('test'), /HTTPS/);
+    }
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const key of keys) { if (original[key] === undefined) delete process.env[key]; else process.env[key] = original[key]; }
+  }
+});

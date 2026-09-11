@@ -78,17 +78,6 @@ const services = [
     lanUrl: 'https://{ip}:5173',
   },
   {
-    name: 'grade128',
-    label: 'Grade128',
-    desc: 'MapleQuest 学习应用 · Python 服务',
-    dir: 'Grade128',
-    command: 'python server.py',
-    ports: [8000],
-    url: 'http://127.0.0.1:8000',
-    lanCommand: 'python server.py --lan',
-    lanUrl: 'http://{ip}:8000',
-  },
-  {
     name: 'receipt',
     label: 'Receipt Organizer',
     desc: '收据管家 · 仪表盘 + Discord 机器人',

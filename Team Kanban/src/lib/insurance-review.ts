@@ -1,8 +1,10 @@
-export type Coverage = { label: string; en: string; values: string[] };
-export type VehicleQuote = { id: string; name: string; premiums: string[] };
+export type Coverage = { label: string; en: string; values: string[]; excluded?: boolean[] };
+export type VehicleQuote = { id: string; name: string; premiums: string[]; included?: boolean[]; rows?: Coverage[] };
 export const propertyTypes = ["自住房", "condo", "租客", "出租房", "出租condo", "度假屋"] as const;
-export type PropertyQuote = { id: string; name: string; type: "" | typeof propertyTypes[number]; premiums: string[]; rows: Coverage[] };
+export type PropertyQuote = { id: string; name: string; type: "" | typeof propertyTypes[number]; premiums: string[]; rows: Coverage[]; included?: boolean[] };
 export type Review = {
+  planNames?: string[];
+  legacyAutoRows?: Coverage[];
   properties?: PropertyQuote[];
   vehicles?: VehicleQuote[];
   name: string; phone: string; vehicle: string; property: string; currency: string; effective: string;
@@ -30,6 +32,7 @@ export const initialReview: Review = {
   ], selected: null, note: '', checks: [false, false, false],
 };
 export function total(review: Review, index: number): number | null {
+  if (![...vehicleQuotes(review), ...propertyQuotes(review)].some(risk => riskIncluded(risk, index))) return null;
   const parts = [autoPremium(review, index), homePremium(review, index)];
   if (parts.some(value => !/^\d+(\.\d{1,2})?$/.test(value.trim()))) return null;
   return parts.reduce((sum, value) => sum + Math.round(Number(value) * 100), 0) / 100;
@@ -37,15 +40,16 @@ export function total(review: Review, index: number): number | null {
 export function isReview(value: unknown): value is Review {
   if (!value || typeof value !== 'object') return false;
   const v = value as Review;
+  if (v.planNames !== undefined && (!Array.isArray(v.planNames) || v.planNames.length !== v.carriers?.length || !v.planNames.every(name => typeof name === 'string' && name.length <= 80))) return false;
   const strings = (a: unknown) => Array.isArray(a) && a.length >= 2 && a.every(x => typeof x === 'string');
-  const rows = (a: unknown) => Array.isArray(a) && a.length > 0 && a.every(r => r && typeof r.label === 'string' && typeof r.en === 'string' && strings(r.values));
-  return ['name','phone','vehicle','property','currency','effective','note'].every(k => typeof v[k as keyof Review] === 'string') && ['CAD','USD'].includes(v.currency) && (v.selected === null || (Number.isInteger(v.selected) && v.selected > 0 && v.selected < v.carriers?.length)) && strings(v.carriers) && strings(v.auto) && strings(v.home) && v.auto.length === v.carriers.length && v.home.length === v.carriers.length && rows(v.autoRows) && rows(v.homeRows) && [...v.autoRows, ...v.homeRows].every(r => r.values.length === v.carriers.length) && Array.isArray(v.checks) && v.checks.length === 3 && v.checks.every(x => typeof x === 'boolean') && (v.properties === undefined || (Array.isArray(v.properties) && v.properties.length > 0 && new Set(v.properties.map(p => p?.id)).size === v.properties.length && v.properties.every(p => p && typeof p.id === 'string' && !!p.id && typeof p.name === 'string' && (p.type === '' || propertyTypes.includes(p.type)) && strings(p.premiums) && p.premiums.length === v.carriers.length && rows(p.rows) && p.rows.every(r => r.values.length === v.carriers.length)))) && (v.vehicles === undefined || (Array.isArray(v.vehicles) && v.vehicles.length > 0 && new Set(v.vehicles.map(car => car?.id)).size === v.vehicles.length && v.vehicles.every(car => car && typeof car.id === 'string' && !!car.id && typeof car.name === 'string' && strings(car.premiums) && car.premiums.length === v.carriers.length)));
+  const rows = (a: unknown) => Array.isArray(a) && a.length > 0 && a.every(r => r && typeof r.label === 'string' && typeof r.en === 'string' && strings(r.values) && (r.excluded === undefined || (Array.isArray(r.excluded) && r.excluded.length === r.values.length && r.excluded.every((x: unknown) => typeof x === 'boolean'))));
+  return ['name','phone','vehicle','property','currency','effective','note'].every(k => typeof v[k as keyof Review] === 'string') && ['CAD','USD'].includes(v.currency) && (v.selected === null || (Number.isInteger(v.selected) && v.selected > 0 && v.selected < v.carriers?.length)) && strings(v.carriers) && strings(v.auto) && strings(v.home) && v.auto.length === v.carriers.length && v.home.length === v.carriers.length && rows(v.autoRows) && rows(v.homeRows) && [...v.autoRows, ...v.homeRows].every(r => r.values.length === v.carriers.length) && Array.isArray(v.checks) && v.checks.length === 3 && v.checks.every(x => typeof x === 'boolean') && (v.legacyAutoRows === undefined || (rows(v.legacyAutoRows) && v.legacyAutoRows.every(r => r.values.length === v.carriers.length))) && (v.properties === undefined || (Array.isArray(v.properties) && v.properties.length > 0 && new Set(v.properties.map(p => p?.id)).size === v.properties.length && v.properties.every(p => p && typeof p.id === 'string' && !!p.id && typeof p.name === 'string' && (p.type === '' || propertyTypes.includes(p.type)) && strings(p.premiums) && p.premiums.length === v.carriers.length && (p.included === undefined || (Array.isArray(p.included) && p.included.length === v.carriers.length && p.included.every(x => typeof x === 'boolean'))) && rows(p.rows) && p.rows.every(r => r.values.length === v.carriers.length)))) && (v.vehicles === undefined || (Array.isArray(v.vehicles) && v.vehicles.length > 0 && new Set(v.vehicles.map(car => car?.id)).size === v.vehicles.length && v.vehicles.every(car => car && typeof car.id === 'string' && !!car.id && typeof car.name === 'string' && strings(car.premiums) && car.premiums.length === v.carriers.length && (car.included === undefined || (Array.isArray(car.included) && car.included.length === v.carriers.length && car.included.every(x => typeof x === 'boolean'))) && (car.rows === undefined || (rows(car.rows) && car.rows.every(r => r.values.length === v.carriers.length))))));
 }
 
 export const optionalABFields = [
-  ['OPCF 47R 批单', 'OPCF 47R'],
-  ['额外医疗、康复及护理保额', 'Supplementary medical / rehabilitation / attendant care'],
-  ['收入替代（每周限额）', 'Income replacement'],
+  ['OPCF 47R 可选 OAB 价格', 'OPCF 47R'],
+  ['额外医疗、康复及护理', 'Supplementary medical / rehabilitation / attendant care'],
+  ['收入替代', 'Income replacement'],
   ['非收入者补助', 'Non-earner'],
   ['照护者补助 · 灾难性伤残', 'Caregiver · catastrophic'],
   ['照护者补助 · 任何程度伤残', 'Caregiver · impairment'],
@@ -75,7 +79,7 @@ export function paymentBreakdown(value: string, line: 'auto' | 'home') {
 export function planPayments(review: Review, i: number) {
   const auto = paymentBreakdown(autoPremium(review, i), 'auto');
   const home = paymentBreakdown(homePremium(review, i), 'home');
-  return { auto, home, monthly: auto && home ? Math.round((auto.monthly + home.monthly) * 100) / 100 : null };
+  return { auto, home, monthly: total(review, i) !== null && auto && home ? Math.round((auto.monthly + home.monthly) * 100) / 100 : null };
 }
 
 export function vehicleQuotes(review: Review): VehicleQuote[] {
@@ -85,6 +89,7 @@ export function autoPremium(review: Review, index: number): string {
   if (!review.vehicles) return review.auto[index];
   let cents = 0;
   for (const vehicle of review.vehicles) {
+    if (!riskIncluded(vehicle, index)) continue;
     const value = vehicle.premiums[index];
     if (typeof value !== 'string' || !/^\d+(\.\d{1,2})?$/.test(value.trim())) return '';
     cents += Math.round(Number(value) * 100);
@@ -103,6 +108,7 @@ export function propertyQuotes(review: Review): PropertyQuote[] {
 export function homePremium(review: Review, index: number): string {
   let cents = 0;
   for (const property of propertyQuotes(review)) {
+    if (!riskIncluded(property, index)) continue;
     const value = property.premiums[index];
     if (typeof value !== 'string' || !/^\d+(\.\d{1,2})?$/.test(value.trim())) return '';
     cents += Math.round(Number(value) * 100);
@@ -114,3 +120,11 @@ export function withProperties(review: Review): Review {
   const next = { ...review, properties: propertyQuotes(review) };
   return { ...next, home: next.carriers.map((_, i) => homePremium(next, i)), property: next.properties.map(p => p.name || '未命名房屋').join(' / ') };
 }
+export function annualPayable(review: Review, index: number): number | null {
+  const base = total(review, index);
+  if (base === null) return null;
+  const home = Math.round(Number(homePremium(review, index)) * 100);
+  return (Math.round(base * 100) + Math.round(home * 0.08)) / 100;
+}
+export const planTitle = (review: Review, index: number) => index === 0 ? '现有保险' : review.planNames?.[index]?.trim() || `方案${index === 1 ? '一' : index === 2 ? '二' : index}`;
+export const riskIncluded = (risk: { included?: boolean[] }, index: number): boolean => risk.included?.[index] ?? true;

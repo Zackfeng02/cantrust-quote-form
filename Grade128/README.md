@@ -72,3 +72,36 @@ Primary sources:
 The local server hashes parent PINs with PBKDF2, stores records in SQLite, rate-limits parent login attempts, and uses HttpOnly same-site session cookies. Parents sign in with the family access code shown on the learner’s mission card plus the PIN chosen during setup.
 
 This is appropriate for local or carefully managed self-hosting. A public production release still needs HTTPS, deployment-specific secrets and backups, a consent and deletion workflow, guardian identity verification, audit logging, and a formal review against Ontario and Canadian children’s privacy requirements.
+
+## Run with Docker (Windows)
+
+Start Docker Desktop, then double-click `docker-start.bat`. Open http://localhost:8000/.
+Use `docker-stop.bat` to stop intentionally. Manage this application with Docker,
+which is now excluded from service-monitor (both the script and rebuilt executable).
+
+```powershell
+docker compose up -d --build --wait
+docker compose ps
+docker compose logs --tail 100 -f
+docker compose stop
+```
+
+The default port mapping preserves the previous trusted-LAN mode on port 8000.
+For localhost-only access, set `GRADE128_BIND_IP=127.0.0.1` in a local `.env`
+file before recreating the container. Do not configure router port forwarding.
+The application listens on all interfaces inside the container.
+
+The existing `.data/maplequest.sqlite3` remains on the host, mounted at `/data`.
+Rebuilding/removing the container does not remove this directory. Back it up separately.
+Do not run the native Python server and container against this database simultaneously.
+The image contains only server code and frontend assets, not learner data or backups.
+
+The container restarts after process exit and Docker engine restart unless manually
+stopped. Enable Docker Desktop's start-at-sign-in setting for login-time recovery.
+A healthcheck reports HTTP health; it does not itself restart an unhealthy process.
+Computer sleep/shutdown still interrupts availability.
+
+After source changes, rerun `docker-start.bat` to rebuild. To roll back to native
+Python, first run `docker compose down`, then `python server.py --lan`;
+both use the same host database. Do not restore an old backup unless intentionally
+discarding newer changes. Pre-migration snapshots are under `.data/backups/`.

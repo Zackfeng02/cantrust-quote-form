@@ -2,7 +2,7 @@
 
 .ir-scroll-hint{font-size:10px;color:#819077;margin:0 0 9px!important}.ir th[scope=row]{position:sticky;left:0;z-index:1;border-right:1px solid #e7ece2}@media(max-width:800px){.ir th[scope=row]{position:static}}
 
-.ir{padding-left:var(--sidebar,226px)}.ir-client{flex-wrap:wrap}.ir-client>.ir-btn{flex-shrink:0}@media(max-width:720px){.ir{padding-left:0;padding-bottom:80px}.ir-client>.ir-btn{margin-left:auto}}@media print{.ir{padding-left:0;padding-bottom:0}.ir>.sidebar,.ir>.mobile-nav{display:none}}
+.ir-client{flex-wrap:wrap}.ir-client>.ir-btn{flex-shrink:0}@media(max-width:720px){.ir-client>.ir-btn{margin-left:auto}}@media print{}
 /* Compact working view. */
 .ir-header{height:64px}.ir-brand{font-size:17px;letter-spacing:0}.ir-brand svg{height:34px;width:32px;padding:6px;border-radius:8px}.ir-main{padding-top:24px}.ir-title{margin-bottom:20px}.ir h1{font-size:24px}.ir-client{margin-bottom:24px}.ir-price-label h3{font-size:17px;margin:0 0 16px}.ir-confirm-heading{margin-bottom:20px}.ir-footer{justify-content:flex-end;margin-top:20px}
 /* Dense coverage rows retain distinct labels and readable values. */
@@ -10,3 +10,8 @@
 .ir .ir-ab-start th,.ir .ir-ab-start td{border-top:2px solid #dce5d5;background:#f4f7ef;font-weight:600}
 .ir-add-vehicle{margin-left:auto}.ir-vehicle-row th,.ir-vehicle-row td{background:#fafcf8}.ir-vehicle-label{display:block;font-size:10px;color:#7b8b74;margin-bottom:4px}.ir-vehicle-name{display:block;font-weight:500;line-height:1.6}.ir-remove-vehicle{display:block;padding:4px 0;color:#9b7565;font-size:9px}.ir-vehicle-row input{margin-bottom:3px}.ir .ir-premium th{font-weight:600}
 .ir-profiles{border:1px solid #dfe6dc;border-radius:7px;background:white;padding:16px;margin-bottom:20px}.ir-profiles-toolbar{display:flex;align-items:center;gap:10px}.ir-profiles-toolbar h2{margin-right:auto}.ir-profiles-toolbar h2 small{color:#84917d;margin-left:6px}.ir-profiles-toolbar input{border:1px solid #dce4d7;border-radius:5px;padding:8px 10px;font-size:11px}.ir-profile-list{display:flex;gap:10px;overflow-x:auto;padding:13px 0 3px}.ir-profile{flex:0 0 235px;text-align:left;border:1px solid #e0e7da;border-radius:5px;padding:11px 13px;background:#fafbf8;display:grid;gap:5px}.ir-profile.active{border-color:#60896c;background:#edf4e8}.ir-profile strong{font-size:12px;font-weight:500}.ir-profile span,.ir-profile small,.ir-profile-list>p{font-size:10px;color:#809075}.ir-profile-hint{font-size:10px;color:#8e9a85;margin-top:9px!important}@media(max-width:720px){.ir-profiles-toolbar{flex-wrap:wrap}.ir-profiles-toolbar h2{width:100%}.ir-profiles-toolbar input{width:100%}.ir-profiles-toolbar .ir-btn{flex:1;justify-content:center}.ir-profile{flex-basis:220px}}
+.ir-ab-unneeded{display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px}.ir-ab-start button{text-align:left;font-weight:600;cursor:pointer}.ir .ir-diff-compact th,.ir .ir-diff-compact td{padding:6px 12px;height:auto}.ir-diff-compact .ir-risk-include{font-size:10px}.ir-diff-compact .ir-different{padding:1px 4px}
+.ir td.ir-cell-different{background:#e9f3df;box-shadow:inset 3px 0 #86a969}.ir-plan-title input{width:100%;min-width:0;font-size:14px}
+
+/* Keep excluded plan columns visible but secondary in compact mode. */
+.ir .ir-diff-compact .ir-risk-muted{color:#9ba39e;background:#f7f8f6;box-shadow:none;font-weight:400}.ir .ir-diff-compact .ir-risk-muted .ir-excluded,.ir .ir-diff-compact .ir-risk-muted .ir-risk-include{color:inherit;font-size:10px;font-weight:400}.ir .ir-diff-compact .ir-risk-muted input[type=checkbox]{opacity:.45}

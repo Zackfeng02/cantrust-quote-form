@@ -135,3 +135,45 @@ Profile 记录保存在访问浏览器的 localStorage，支持多客户独立�
 
 月付规则：车险分期费为原始年保费的 1.3%，无税；房险分期费为原始年保费的 3%，税为原始年保费的 8%，分别按 12 期估算。费用先四舍五入至分，月付按险种分别取分后合计；尾期可有分币调整。OPCF 47R 字段参考 FSRA AF-162E (2026)，不自动推断已投保或限额。旧记录加载后新增保项均为待确认，旧确认需重新核对。
 车辆信息支持新增、编辑和移除（至少保留一辆）。逐车、逐方案输入原始年保费，汇总后按车险总保费计算 1.3% 分期费。缺少任一车辆报价时合计为待确认；原单车数据迁移到第一辆车。保障表仍为方案级记录，车辆保项差异可在保项值中注明车辆编号。
+
+## Docker 运行（本机迁移）
+
+Docker Desktop 启动后，双击 docker-start.bat 启动/更新网页和 worker。
+双击 docker-stop.bat 会先停止 worker，再停止网页。
+网页仍在 http://localhost:3000/；原有 Cloudflare 隧道继续连接宿主机的此端口。
+Docker 不负责现有隧道的启动，隧道重启后地址仍可能变化。
+
+配置沿用 .env.local，以只读文件挂载，密钥和业务数据不进入镜像。
+网页单独挂载实际使用的 .data/postgres-restored-20260911 至 /data/postgres，
+并挂载 .data/objects；worker 只挂载 .data/spool，通过 http://web:3000 调用网页，
+不直接打开 PGlite。Supabase 保险方案继续使用原数据库和 config 下的 CA。
+ClientCore 仍在宿主机运行，容器通过 host.docker.internal 访问；只有显式开启
+CLIENTCORE_ALLOW_DOCKER_HOST=true 时才允许此精确主机名使用 HTTP。
+浏览器入口和 APP_ORIGIN 保持原值；无需迁移浏览器 localStorage。
+
+在本目录执行：
+~~~powershell
+docker compose ps
+docker compose logs --tail 100 -f
+docker compose up -d --build --wait
+docker compose stop worker
+docker compose stop web
+~~~
+
+容器配置了 unless-stopped 重启策略。Docker Desktop 必须先运行；
+登录自动启动由 Docker Desktop 设置控制。网页健康检查验证带鉴权的数据库读取，
+不只检查端口。worker 日志中的“机器人已连接”才表示机器人鉴权成功。
+这不是合并转发或真实消息收取的端到端验收。
+
+迁移前备份位于 .data/backups/pre-docker-*，实际路径记录在
+.data/docker-backup-path.txt；包含原数据库、附件、待同步队列和配置。
+备份含敏感数据，不应上传或加入版本控制。
+不要让原生网页和容器同时打开同一个 PGlite 目录，也不要同时启动两个机器人 worker。
+需要备份时先停 worker，再停 web，随后复制上述持久化目录和 .env.local。
+
+回退：先 docker compose down，再在本目录执行 npm run start，
+另一个终端执行 npm run worker。原来的 .env.local 未改动，仍指向同一个
+宿主机数据库目录，正常回退无需恢复旧备份。现有隧道无需重启。
+当前 LOCAL_PREVIEW / DEMO_MODE 配置保持原样；容器化未改变部署模式。
+
+已有界面修改包含在镜像中；以后改动源码后需重新构建镜像。

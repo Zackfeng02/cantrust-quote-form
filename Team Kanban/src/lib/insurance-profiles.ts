@@ -1,3 +1,4 @@
+import { withCoverageControls } from './insurance-coverage.ts';
 import { isReview, initialReview, withOptionalAB, withVehicles, type Review, type planPayments } from './insurance-review.ts';
 export const PROFILES_KEY = 'insurance-review-profiles-v1';
 export type SavedProfile = { id: string; review: Review; status: 'draft' | 'confirmed'; savedAt: string; version?: number; calculationVersion?: number; paymentView?: string; payments?: ReturnType<typeof planPayments>[] };
@@ -12,6 +13,6 @@ export function upsertProfile(store: ProfileStore | null, profile: SavedProfile)
   return { version: 1, activeId: profile.id, profiles: [...(store?.profiles ?? []).filter(p => p.id !== profile.id), profile] };
 }
 export function blankProfile(): Review {
-  const review = withVehicles(withOptionalAB(structuredClone(initialReview)));
+  const review = withCoverageControls(withVehicles(withOptionalAB(structuredClone(initialReview))));
   return { ...review, name: '', phone: '', property: '', effective: '', vehicle: '', note: '', selected: null, checks: [false, false, false], carriers: review.carriers.map(() => ''), auto: review.auto.map(() => ''), home: review.home.map(() => ''), vehicles: [{ id: 'vehicle-1', name: '', premiums: review.carriers.map(() => '') }], autoRows: review.autoRows.map(r => ({ ...r, values: r.values.map(() => '待确认') })), homeRows: review.homeRows.map(r => ({ ...r, values: r.values.map(() => '待确认') })) };
 }

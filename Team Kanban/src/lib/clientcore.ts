@@ -17,7 +17,7 @@ function integrationConfig() {
   if (!value || !key) throw new Problem(503, 'ClientCore 客户查询尚未配置');
   let base: URL;
   try { base = new URL(value.endsWith('/') ? value : value + '/'); } catch { throw new Problem(503, 'ClientCore 客户查询地址无效'); }
-  const localHttp = base.protocol === 'http:' && ['127.0.0.1', 'localhost', '::1'].includes(base.hostname);
+  const localHttp = base.protocol === 'http:' && (['127.0.0.1', 'localhost', '::1'].includes(base.hostname) || (process.env.CLIENTCORE_ALLOW_DOCKER_HOST === 'true' && base.hostname === 'host.docker.internal'));
   if ((!localHttp && base.protocol !== 'https:') || base.username || base.password) throw new Problem(503, 'ClientCore 客户查询地址必须使用 HTTPS');
   return { base, key };
 }

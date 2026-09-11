@@ -1,10 +1,25 @@
- 'use client';
+'use client';
 import { CheckCheck, Columns3, Inbox, LayoutGrid, LogOut, Users } from 'lucide-react';
-export type NavigationPage = 'board' | 'inbox' | 'team' | 'insurance';
-export type NavigationData = { team: { name: string }; members: { active: boolean }[]; me: { name: string; role: string } };
-const items = [['board', LayoutGrid, '团队看板', '看板'], ['inbox', Inbox, '资料收件箱', '收件箱'], ['team', Users, '团队成员', '团队'], ['insurance', Columns3, '保险方案对比', '方案对比']] as const;
-export default function WorkspaceNavigation({ page, data, inbox = 0, onNavigate, onLogout, mobile = false }: { page: NavigationPage; data: NavigationData | null; inbox?: number; onNavigate?: (page: 'board' | 'inbox' | 'team') => void; onLogout: () => void; mobile?: boolean }) {
-  const links = (mobile ? [items[3], ...items.slice(0, 3)] : items).map(([id, Icon, label, short]) => <a key={id} href={id === 'insurance' ? '/insurance-review' : '/?page=' + id} className={(mobile ? '' : 'nav-item ') + (page === id ? 'active' : '')} aria-current={page === id ? 'page' : undefined} onClick={e => { if (onNavigate && id !== 'insurance') { e.preventDefault(); onNavigate(id); } }}><Icon size={mobile ? 20 : 18}/><span>{mobile ? short : label}</span>{!mobile && id === 'inbox' && inbox > 0 && <b>{inbox}</b>}</a>);
-  if (mobile) return <nav className="mobile-nav workspace-navigation" aria-label="手机工作空间导航">{links}<button onClick={onLogout}><LogOut size={20}/>退出</button></nav>;
-  return <aside className="sidebar workspace-navigation"><a href="/" className="brand"><span className="brand-mark"><CheckCheck size={23}/></span><span>Team Kanban</span></a><div className="workspace"><div>{data?.team.name || '工作空间'}<small>{data ? `${data.members.filter(m => m.active).length} 位团队成员` : '登录后查看团队'}</small></div></div><div className="nav-label">工作空间</div><nav aria-label="工作空间导航">{links}</nav><div className="sidebar-bottom"><span className="avatar">{data?.me.name.slice(-2) || '客'}</span><div><strong>{data?.me.name || '尚未登录'}</strong><small>{data?.me.role === 'admin' ? '团队管理员' : '团队成员'}</small></div><button aria-label="退出登录" className="icon-button" onClick={onLogout}><LogOut size={16}/></button></div></aside>;
+import { workspacePages, type NavigationPage, type LocalNavigationPage } from '../lib/workspace-pages.ts';
+import styles from './workspace-shell.module.css';
+export type { NavigationPage } from '../lib/workspace-pages.ts';
+export type NavigationData = { team: { name: string }; members: { active: boolean }[]; me: { id?: string; name: string; role: string }; sources?: { sender: string; taskIds: string[] }[] };
+export type WorkspaceNavigationProps = { page: NavigationPage; data: NavigationData | null; inbox?: number; onNavigate?: (page: LocalNavigationPage) => void; onLogout: () => void };
+const icons = { board: LayoutGrid, inbox: Inbox, team: Users, insurance: Columns3 };
+export default function WorkspaceNavigation({ page, data, inbox, onNavigate, onLogout }: WorkspaceNavigationProps) {
+  const inboxCount = inbox ?? data?.sources?.filter(source => source.sender === data.me.id && !source.taskIds.length).length ?? 0;
+  const links = workspacePages.map(({ id, kind, href, label, shortLabel, icon }) => {
+    const Icon = icons[icon];
+    return <a key={id} href={href} className={styles.navLink} aria-current={page === id ? 'page' : undefined} onClick={e => {
+      if (onNavigate && kind === 'local' && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) { e.preventDefault(); onNavigate(id); }
+    }}><Icon aria-hidden="true"/><span className={styles.longLabel}>{label}</span><span className={styles.shortLabel}>{shortLabel}</span>{id === 'inbox' && inboxCount > 0 && <b aria-label={`${inboxCount} 份待整理资料`}>{inboxCount}</b>}</a>;
+  });
+  return <aside className={styles.navigation} aria-label="工作空间导航面板" data-workspace-navigation>
+    <a href="/" className={styles.brand}><span><CheckCheck aria-hidden="true"/></span>Team Kanban</a>
+    <div className={styles.workspace}><span className={styles.avatar}>{data?.team.name.slice(0, 1) || 'T'}</span><div>{data?.team.name || '工作空间'}<small>{data ? `${data.members.filter(m => m.active).length} 位团队成员` : '登录后查看团队'}</small></div></div>
+    <div className={styles.caption}>工作空间</div>
+    <nav className={styles.links} aria-label="工作空间">{links}</nav>
+    <div className={styles.user}><span className={styles.avatar}>{data?.me.name.slice(-2) || '客'}</span><div><strong>{data?.me.name || '尚未登录'}</strong><small>{data?.me.role === 'admin' ? '团队管理员' : '团队成员'}</small></div><button type="button" aria-label="退出登录" onClick={onLogout}><LogOut aria-hidden="true"/></button></div>
+    <button type="button" className={styles.mobileLogout} aria-label="退出登录" onClick={onLogout}><LogOut aria-hidden="true"/><span>退出</span></button>
+  </aside>;
 }
